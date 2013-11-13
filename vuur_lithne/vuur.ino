@@ -95,8 +95,9 @@ void VuLoop() {
     ceiling->intensity = 200; // no fade, is ugly
     ceiling->cct = 255;
   } else {
-    ceiling->enabled = false;
-    ceiling->intensity = 0;
+    ceiling->enabled = true;
+    ceiling->intensity = 50;
+    ceiling->cct = 128;
   }
 
   // Set coves based on fraction
