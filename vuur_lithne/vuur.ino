@@ -174,7 +174,7 @@ void VuSetTouchRecord(int arg) {
 }
 
 void VuSetVariation(int arg) {
-  vuur->variation = max(5, (int)((float)arg / 1000.0));
+  vuur->variation = 5 - max(5, (int)((float)arg / 1000.0));
 }
 
 float VuFraction() {
