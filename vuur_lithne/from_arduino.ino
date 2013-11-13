@@ -4,6 +4,8 @@
 #define TOUCH_DURATION 4
 #define STOP 5
 
+#define ACCEPT_STOP_FROM 3
+
 void FaSetup() {
   Serial6.begin(9600);
 }
@@ -36,8 +38,12 @@ void FaLoop() {
         VuSetVariation(arg);
         break;
       case STOP:
-        Serial.println("stopping for 1s");
-        VuStop();
+        if (arg == ACCEPT_STOP_FROM) {
+          Serial.println("stopping for 1s");
+          VuStop();
+        } else {
+          Serial.println("got stop command from wrong pad");
+        }
         break;
       default:
         while (Serial6.available())
