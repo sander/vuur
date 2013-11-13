@@ -60,7 +60,7 @@ void update404() {
     
     if (update404CoveHSB()) return;
     if (update404CoveParametrics()) return;
-    //if (update404Ceiling()) return;
+    if (update404Ceiling()) return;
     if (update404Solime()) return;
     
     currentUpdate++;
