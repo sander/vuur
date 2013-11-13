@@ -33,7 +33,7 @@ TouchStatus last_status[N_TRIANGLES];
 int n_touched = 0;
 int n_touched_record = 0;
 unsigned long n_touched_record_time = 0;
-const int double_tap_id = 0;
+int double_tap_id = -1;
 int double_tap_state = 0;
 unsigned long double_tap_time = 0;
 
@@ -59,29 +59,45 @@ void loop() {
       //Serial.print(i);
       //Serial.println(status);
       if (status == IDLE) {
-          Serial.print("idle");
-          Serial.print(i);
-          Serial.print(status);
-          Serial.println(last_status[i]);
+          //Serial.print("idle");
+          //Serial.print(i);
+          //Serial.print(status);
+          //Serial.println(last_status[i]);
       }
       set_touch_status(i, status);
       //Serial.write(i);
       switch (status) {
         case TOUCHED:
           maybe_add_pt(i);
-          if (i == double_tap_id) {
-            // TODO finish double tap to quit; go from 0 to 4 with right intervals
-            if (double_tap_state == 0) {
-              double_tap_state = 1;
-              double_tap_time = millis();
-            } else if (double_tap_state == 2) {
-              double_tap_state = 3;
-              double_tap_time = millis();
-            }
+          
+          // handle double tap
+          if (double_tap_state == 0 || millis() - double_tap_time >= DOUBLE_TAP_INTERVAL || double_tap_id != i) {
+            double_tap_id = i;
+            double_tap_state = 1;
+            double_tap_time = millis();
+          } else if (double_tap_id == i && double_tap_state == 2 && millis() - double_tap_time < DOUBLE_TAP_INTERVAL) {
+            double_tap_state = 3;
+            double_tap_time = millis();
           }
+          
           break;
         case IDLE:
           to_lithne(TOUCH_DURATION, (int)(touch_end[i] - touch_start[i]));
+          
+          // handle double tap
+          if (double_tap_id == i) {
+            if (millis() - double_tap_time < DOUBLE_TAP_INTERVAL) {
+              if (double_tap_state == 1) {
+                double_tap_state = 2;
+                double_tap_time = millis();
+              } else if (double_tap_state == 3) {
+                to_lithne(STOP, double_tap_id);
+                double_tap_state = 0;
+                double_tap_time -= DOUBLE_TAP_INTERVAL;
+              }
+            }
+          }
+          
           break;
       }
     } else if (status == TOUCHED) {

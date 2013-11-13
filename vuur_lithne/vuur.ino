@@ -4,6 +4,7 @@
 #define MAX_POINTS 100
 #define FADE_INTERVAL 500
 #define MAX_VARIATION 12
+#define STOP_DURATION 1000
 
 // Commands
 #define ADD_PT 1
@@ -27,6 +28,7 @@ struct Vuur {
   int touchRecord;
   float center;
   float width;
+  unsigned long stopped;
 };
 
 Vuur *vuur;
@@ -79,9 +81,11 @@ void VuLoop() {
   if (fraction < 0) fraction = 0.0;
   if (fraction > 1) fraction = 1.0;
   
-  vuur->fraction = fraction;
-  
-  Serial.println(fraction);
+  if (vuur->fraction != fraction) {
+    vuur->fraction = fraction;
+    
+    Serial.println(fraction);
+  }
   
   //Serial.println(fraction);
   
@@ -197,6 +201,21 @@ void VuSetVariation(int arg) {
 
 float VuFraction() {
   return vuur->fraction;
+}
+
+void VuStop() {
+  return;
+  vuur->fraction = 0.0;
+  vuur->variation = 0;
+  vuur->touchRecord = 0;
+  for (int i = 0; i < N_PADS; i++) {
+    vuur->pads[i]->points = 0;
+  }
+  vuur->stopped = millis();
+}
+
+boolean VuIsStopped() {
+  return (millis() - vuur->stopped < STOP_DURATION);
 }
 
 /*
