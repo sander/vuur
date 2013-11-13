@@ -52,7 +52,6 @@ void VuSetup() {
   vuur->pads[n++] = (Pad *)VuCreatePad(223, 96, 93);
   
   vuur->variation = 2;
-  //vuur->
   vuur->center = 6.5;
   
   for (int i = 0; i < 16; i++) {
@@ -67,15 +66,6 @@ void VuLoop() {
   
   VuFade();
   
-  // FIXME Set amount of points
-  /*
-  int newPoints = (int)(100.0 * readPotmeter());
-  if (newPoints != lastPoints) {
-    //Serial.println("setting");
-    lastPoints = vuur->pads[0]->points = newPoints;
-  }
-  */
-  
   // Check intensity
   float fraction = (float)VuTotalPoints() / (float)MAX_POINTS;
   if (fraction < 0) fraction = 0.0;
@@ -86,9 +76,7 @@ void VuLoop() {
     
     Serial.println(fraction);
   }
-  
-  //Serial.println(fraction);
-  
+    
   void *winning = VuWinningPad();
   if (winning) {
     Pad *pad = (Pad *)winning;
@@ -104,7 +92,6 @@ void VuLoop() {
   // Set ceiling
   if (fraction < 0.1) {
     ceiling->enabled = true;
-    //ceiling->intensity = (int)((1 - fraction / 0.3) * 255.0);
     ceiling->intensity = 200; // no fade, is ugly
     ceiling->cct = 255;
   } else {
@@ -116,11 +103,6 @@ void VuLoop() {
   vuur->width = 8.0 * fraction;
   for (int i = 0; i < 16; i++) {
     float distanceFactor = 1.0 - distances[i] / vuur->width;
-    /*
-    Serial.println(i);
-    Serial.println(distanceFactor);
-    Serial.println();
-    */
     coves[i]->hue = (int)(fraction * 255);//hue;
     coves[i]->saturation = saturation;
     coves[i]->brightness = (int)(fraction * (float)brightness * distanceFactor);
@@ -140,7 +122,6 @@ void VuFade() {
     Pad *pad = vuur->pads[i];
     if (millis() - pad->lastUpdate > FADE_INTERVAL) {
       if (pad->points > 0) {
-        //Serial.println("fading");
         pad->points -= 1;
         pad->lastUpdate = millis();
       }
@@ -193,10 +174,6 @@ void VuSetTouchRecord(int arg) {
 
 void VuSetVariation(int arg) {
   vuur->variation = max(5, (int)((float)arg / 1000.0));
-  // TODO
-  //if (vuur->variation) vuur->variation = 1;
-  //else
-  //vuur->variation = 0;
 }
 
 float VuFraction() {
@@ -217,87 +194,3 @@ void VuStop() {
 boolean VuIsStopped() {
   return (millis() - vuur->stopped < STOP_DURATION);
 }
-
-/*
-
-struct Vuur {
-  byte enabled; // 0-255
-  boolean change;
-  
-  float centre; // 0-8
-  float width; // 0-8
-  
-  float fireFraction; // 0-1
-  float fireCentreFraction; // 0-1
-} vuur;
-
-struct HSBColour {
-  int hue;
-  int saturation;
-  int brightness;
-};
-
-struct Animation {
-  int variation;
-  int speed;
-};
-
-void setupVuur() {
-  vuur.enabled = 0;
-  vuur.change = false;
-  
-  vuur.centre = 6.25;
-  vuur.width  = 3;
-  vuur.fireFraction = 0.6;
-  vuur.fireCentreFraction = 0.2;
-}
-
-void vuSetEnabled(byte enabled) {
-  if (enabled != vuur.enabled) {
-    vuur.enabled = enabled;
-    vuur.change = true;
-  }
-}
-
-void vuSetCentre(float centre) {
-}
-*/
-
-//void vuLoop() {
-  /*
-  if (vuur.change) {
-    vuur.change = false;
-    
-    // Adjust ceiling
-    setFullCeiling(1, 255 - vuur.enabled, 255);
-    
-    return;
-    
-    for (int i = 0; i < 16; i++) {
-      HSBColour c;
-      Animation anim;
-      
-      float distance = abs(((i < 8) ? vuur.centre : 8 - vuur.centre) - (float)(i % 8));
-      int brightness = (distance > vuur.width) ? 0 : (int)((vuur.width - distance) / vuur.width * 255.0);
-      
-      if (brightness > 0) {
-        float fraction = distance / vuur.width;
-        if (fraction < vuur.fireCentreFraction) {
-          c = {35, 204, 255};
-          anim = {5, 240};
-        } else if (fraction < vuur.fireFraction) {
-          c = {18, 237, 255};
-          anim = {10, 100};
-        } else {
-          c = {163, 184, 145};
-          anim = {10, 10};
-        }
-      } else {
-        c = {0, 0, 0};
-        anim = {0, 0};
-      }
-      setCoveParametrics(i, c.hue, c.saturation, c.brightness, anim.variation, anim.speed);
-    }
-  }
-  */
-//}

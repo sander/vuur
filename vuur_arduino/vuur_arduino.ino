@@ -1,10 +1,6 @@
 #define TRIANGLE_PINS {2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13}
 #define N_TRIANGLES 12
 
-// not used
-#define EDGES {{0, 1}, {1, 2}, {2, 3}, {3, 4}}
-#define N_EDGES = 4
-
 #define TouchStatus byte
 #define IDLE 0
 #define UNKNOWN 1
@@ -50,22 +46,8 @@ void loop() {
     if (status == TOUCHED) {
       new_n_touched++;
     }
-    /*
-    Serial.print("newstatus ");
-    Serial.print(status);
-    Serial.println(last_status[i]);
-    */
     if (status != last_status[i]) {
-      //Serial.print(i);
-      //Serial.println(status);
-      if (status == IDLE) {
-          //Serial.print("idle");
-          //Serial.print(i);
-          //Serial.print(status);
-          //Serial.println(last_status[i]);
-      }
       set_touch_status(i, status);
-      //Serial.write(i);
       switch (status) {
         case TOUCHED:
           maybe_add_pt(i);
@@ -119,22 +101,11 @@ void loop() {
 }
 
 TouchStatus value_to_touch_status(int value) {
-  /*
-  Serial.print("VALUE ");
-  Serial.println(value);
-  */
   if (value < 3) return IDLE;
   else /*if (value >= 2)*/ return TOUCHED;
-  //else return UNKNOWN;
 }
 
 void set_touch_status(int i, TouchStatus status) {
-  /*
-  Serial.print("touchstatus ");
-  Serial.print(i);
-  Serial.print(" > ");
-  Serial.println(status);
-  */
   if (status == IDLE) touch_end[i] = millis();
   else if (status == UNKNOWN) touch_lost[i] = millis();
   else if (status == TOUCHED) touch_start[i] = millis();

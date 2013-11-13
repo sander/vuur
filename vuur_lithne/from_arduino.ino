@@ -12,27 +12,26 @@ void FaLoop() {
   if (Serial6.available()) {
     int cmd = Serial6.parseInt();
     int arg = Serial6.parseInt();
+    
+    // TODO why is this needed?
     Serial6.read();
     Serial6.read();
+    
     if (VuIsStopped()) return;
     switch (cmd) {
       case ADD_PT:
-        // add point to pad
         Serial.println("add point to pad");
         VuAddPoints(arg);
         break;
       case ADD_BONUS_PT:
-        // add point to pad
         Serial.println("add bonus point to pad");
         VuAddBonusPoints(arg);
         break;
       case TOUCH_RECORD:
-        // add point to pad
         Serial.println("record");
         VuSetTouchRecord(arg);
         break;
       case TOUCH_DURATION:
-        // add point to pad
         Serial.println("touch duration");
         VuSetVariation(arg);
         break;
@@ -41,10 +40,6 @@ void FaLoop() {
         VuStop();
         break;
       default:
-        //Serial.print("unknown cmd: ");
-        //Serial.print(cmd);
-        //Serial6.read();
-        //Serial6.read();
         while (Serial6.available())
           Serial.print(Serial6.read());
         Serial.println();
