@@ -125,6 +125,8 @@ void VuLoop() {
   
   // Preview
   if (ENABLE_PREVIEW && millis() - vuur->lastPreview < PREVIEW_DURATION) {
+    Serial.print("previewing ");
+    Serial.println(vuur->lastPreviewed);
     Pad *preview = vuur->pads[vuur->lastPreviewed];
     solime->hue = preview->hue;
     solime->saturation = preview->saturation;
@@ -182,7 +184,7 @@ void * VuCreatePad(int hueDeg, int saturationPerc, int brightnessPerc) {
 void VuAddPoints(int arg) {
   vuur->pads[arg]->points++;
   
-  if (millis() - vuur->lastPreview > PREVIEW_DURATION) {
+  if (millis() - vuur->lastPreview > PREVIEW_DURATION || vuur->lastPreviewed != arg) {
     vuur->lastPreviewed = arg;
     vuur->lastPreview = millis();
   }
@@ -191,7 +193,7 @@ void VuAddPoints(int arg) {
 void VuAddBonusPoints(int arg) {
   vuur->pads[arg]->points += 3;
   
-  if (millis() - vuur->lastPreview > PREVIEW_DURATION) {
+  if (millis() - vuur->lastPreview > PREVIEW_DURATION || vuur->lastPreviewed != arg) {
     vuur->lastPreviewed = arg;
     vuur->lastPreview = millis();
   }
