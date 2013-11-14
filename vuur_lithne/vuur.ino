@@ -5,6 +5,8 @@
 #define FADE_INTERVAL 500
 #define MAX_VARIATION 12
 #define STOP_DURATION 1000
+#define PREVIEW_DURATION 500
+#define ENABLE_PREVIEW 1
 
 // Commands
 #define ADD_PT 1
@@ -29,6 +31,8 @@ struct Vuur {
   float center;
   float width;
   unsigned long stopped;
+  int lastPreviewed;
+  unsigned long lastPreview;
 };
 
 Vuur *vuur;
@@ -53,6 +57,8 @@ void VuSetup() {
   
   vuur->variation = 2;
   vuur->center = 6.5;
+  
+  vuur->lastPreviewed = -1;
   
   for (int i = 0; i < 16; i++) {
     distances[i] = abs(((i < 8) ? vuur->center : 8 - vuur->center) - (float)(i % 8));
@@ -116,6 +122,18 @@ void VuLoop() {
       coves[i]->speed = 0;
     }
   }
+  
+  // Preview
+  if (ENABLE_PREVIEW && millis() - vuur->lastPreview < PREVIEW_DURATION) {
+    Pad *preview = vuur->pads[vuur->lastPreviewed];
+    solime->hue = preview->hue;
+    solime->saturation = preview->saturation;
+    solime->brightness = preview->brightness;
+  } else {
+    solime->hue = 0;
+    solime->saturation = 0;
+    solime->brightness = 0;
+  }
 }
 
 void VuFade() {
@@ -163,10 +181,20 @@ void * VuCreatePad(int hueDeg, int saturationPerc, int brightnessPerc) {
 
 void VuAddPoints(int arg) {
   vuur->pads[arg]->points++;
+  
+  if (millis() - vuur->lastPreview > PREVIEW_DURATION) {
+    vuur->lastPreviewed = arg;
+    vuur->lastPreview = millis();
+  }
 }
 
 void VuAddBonusPoints(int arg) {
   vuur->pads[arg]->points += 3;
+  
+  if (millis() - vuur->lastPreview > PREVIEW_DURATION) {
+    vuur->lastPreviewed = arg;
+    vuur->lastPreview = millis();
+  }
 }
 
 void VuSetTouchRecord(int arg) {
