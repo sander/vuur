@@ -1,4 +1,6 @@
+#include <ColorLamp.h>
 #include <HardwareTouch.h>
+#include <LED.h>
 #include <Lithne.h>
 
 void setup() {

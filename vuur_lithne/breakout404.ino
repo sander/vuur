@@ -124,7 +124,7 @@ boolean update404CoveParametrics() {
 
   if (n) {
     fun(1, "setHSB");
-    /*
+    
     for (int i = 0; i < n; i++) {
       arg(updating[i]->id);
       arg(updating[i]->hue);
@@ -132,7 +132,7 @@ boolean update404CoveParametrics() {
       arg(updating[i]->brightness);
     }
     // TODO why did i comment this?
-    */
+    /*
     fun(1, "parametrics");
     for (int i = 0; i < n; i++) {
       arg(updating[i]->id);
@@ -142,6 +142,7 @@ boolean update404CoveParametrics() {
       arg(updating[i]->variation);
       arg(updating[i]->speed);
     }
+    */
     snd();
     return true;
   } else {

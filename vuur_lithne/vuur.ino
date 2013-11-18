@@ -3,7 +3,7 @@
 #define N_PADS 12
 #define MAX_POINTS 100
 #define MAX_VARIATION 12
-#define ENABLE_PREVIEW 1
+#define ENABLE_PREVIEW 0
 #define DOUBLE_TAP_PAD 11
 
 #define FADE_INTERVAL 500
@@ -58,7 +58,7 @@ float distances[16];
 void VuSetup() {
   vuur = new Vuur();
   
-  vuur->pads[0] = (Pad *)VuCreatePad(A7, 16, 83, 100);
+  vuur->pads[0] = (Pad *)VuCreatePad(A7, 16, 54, 100);
   vuur->pads[1] = (Pad *)VuCreatePad(A3, 26, 83, 100);
   vuur->pads[2] = (Pad *)VuCreatePad(A2, 34, 71, 83);
   vuur->pads[3] = (Pad *)VuCreatePad(A9, 48, 57, 75);
@@ -66,10 +66,15 @@ void VuSetup() {
   vuur->pads[5] = (Pad *)VuCreatePad(A1, 148, 64, 91);
   vuur->pads[6] = (Pad *)VuCreatePad(A4, 167, 87, 93);
   vuur->pads[7] = (Pad *)VuCreatePad(A12, 179, 91, 82);
-  vuur->pads[8] = (Pad *)VuCreatePad(A14, 192, 94, 85);
+  vuur->pads[8] = (Pad *)VuCreatePad(A10, 192, 94, 85);
   vuur->pads[9] = (Pad *)VuCreatePad(A8, 207, 95, 89);
   vuur->pads[10] = (Pad *)VuCreatePad(A5, 215, 95, 91);
   vuur->pads[11] = (Pad *)VuCreatePad(A6, 223, 96, 93);
+  
+  for (int i = 0; i < N_PADS; i++) {
+    vuur->pads[i]->pin.setThreshold(2);
+    vuur->pads[i]->pin.calibrate();
+  }
   
   vuur->variation = 2;
   vuur->center = 6.5;
@@ -89,12 +94,18 @@ void VuSetup() {
 
 int lastPoints = 0;
 
-void VuLoop() {
+
+int hue = 0;
+int saturation = 0;
+int brightness = 0;
+
+void VuLoop() {  
   int hue, saturation, brightness;
   
   VuFade();
   
   VuHandleTouch();
+  
   
   // Check intensity
   float fraction = (float)VuTotalPoints() / (float)MAX_POINTS;
@@ -126,9 +137,10 @@ void VuLoop() {
     ceiling->cct = 255;
   } else {
     ceiling->enabled = true;
-    ceiling->intensity = 50;
+    ceiling->intensity = 20;
     ceiling->cct = 128;
   }
+  
 
   // Set coves based on fraction
   vuur->width = 8.0 * fraction;
@@ -147,6 +159,7 @@ void VuLoop() {
     }
   }
   
+  
   // Preview
   if (ENABLE_PREVIEW && millis() - vuur->lastPreview < PREVIEW_DURATION) {
     //Serial.print("previewing ");
@@ -160,6 +173,7 @@ void VuLoop() {
     solime->saturation = 0;
     solime->brightness = 0;
   }
+  
 }
 
 void VuHandleTouch() {
@@ -171,6 +185,8 @@ void VuHandleTouch() {
     pad->touched = touched;
     if (touched) {
         newNTouched++;
+        
+        lamp->hsbTo(pad->hue, pad->saturation, pad->brightness, 100);
         
         if (millis() - vuur->ptAdded[i] > PT_INTERVAL) {
           vuur->ptAdded[i] = millis();
@@ -243,16 +259,17 @@ int VuTotalPoints() {
 }
 
 void * VuWinningPad() {
-  Pad *winning;
+  int winning;
   int highest = 0;
   for (int i = 0; i < N_PADS; i++) {
     int points = vuur->pads[i]->points;
-    if (points > highest) {
-      winning = vuur->pads[i];
+    if (points >= highest) {
+      winning = i;
       highest = points;
     }
   }
-  return winning;
+
+  return vuur->pads[winning];
 }
 
 void * VuCreatePad(int pin, int hueDeg, int saturationPerc, int brightnessPerc) {
