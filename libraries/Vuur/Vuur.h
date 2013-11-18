@@ -31,8 +31,11 @@ public:
 
   Pad *pads[nPads];
 
-  int stopDuration;
+  unsigned int stopDuration;
   int maxPoints;
+  unsigned int doubleTapInterval;
+  int doubleTapPad;
+  unsigned int touchRecordInterval;
 
   int variation;
   int touchRecord;
@@ -43,18 +46,18 @@ public:
   float distances[16];
 
   unsigned long lastPreview;
-  unsigned long nTouchedRecordTime;
+  unsigned long touchRecordTime;
   unsigned long doubleTapTime;
 
   int lastPreviewed;
 
   int nTouched;
-  int nTouchedRecord;
   int doubleTapState;
 
   void setPads(int config[4 * nPads]);
 
   void stop();
+  void update();
 
   Pad *winning();
   int totalPoints();
