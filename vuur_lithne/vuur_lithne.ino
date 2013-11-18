@@ -1,19 +1,21 @@
+#include <Breakout404.h>
 #include <ColorLamp.h>
 #include <HardwareTouch.h>
 #include <LED.h>
 #include <Lithne.h>
+#include <Vuur.h>
 
 void setup() {
   Serial.begin(9600);
 
-  setup404();  
   VuSetup();
   LedSetup();
 }
 
 void loop() {
   VuLoop();
-  update404();
   LedLoop();
+  
+  Breakout404.update();
 }
 
