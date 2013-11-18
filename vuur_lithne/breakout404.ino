@@ -91,7 +91,7 @@ boolean update404CoveHSB() {
   int n = 0;
   for (int i = 0; i < nCoves && n < maxUpdateCoveHSB; i++) {
     ColorCove *cove = coves[i];
-    if (cove->info->updated != currentUpdate && (cove->variation == 0 || cove->brightness == 0)) {
+    if (cove->info->updated != currentUpdate && !useParametrics(cove)) {
       updating[n++] = cove;
       cove->info->updated = currentUpdate;
     }
@@ -118,39 +118,33 @@ boolean update404CoveParametrics() {
   int n = 0;
   for (int i = 0; i < nCoves && n < maxUpdateParametrics; i++) {
     ColorCove *cove = coves[i];
-    if (cove->info->updated != currentUpdate && (cove->variation != 0 && cove->brightness != 0)) {
+    if (cove->info->updated != currentUpdate && useParametrics(cove)) {
       updating[n++] = cove;
       cove->info->updated = currentUpdate;
     }
   }
 
   if (n) {
-    fun(1, "setHSB");
-
+    fun(1, "parametrics");
     for (int i = 0; i < n; i++) {
       arg(updating[i]->id);
       arg(updating[i]->hue);
       arg(updating[i]->saturation);
       arg(updating[i]->brightness);
+      arg(updating[i]->variation);
+      arg(updating[i]->speed);
     }
-    // TODO why did i comment this?
-    /*
-    fun(1, "parametrics");
-     for (int i = 0; i < n; i++) {
-     arg(updating[i]->id);
-     arg(updating[i]->hue);
-     arg(updating[i]->saturation);
-     arg(updating[i]->brightness);
-     arg(updating[i]->variation);
-     arg(updating[i]->speed);
-     }
-     */
     snd();
     return true;
   } 
   else {
     return false;
   }
+}
+
+boolean useParametrics(void *coveObj) {
+  ColorCove *cove = (ColorCove *)coveObj;
+  return cove->variation != 0 && cove->brightness != 0;
 }
 
 boolean update404Ceiling() {
@@ -215,4 +209,5 @@ void * createSolime() {
   solime->brightness = 0;
   return solime;
 }
+
 

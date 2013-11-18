@@ -13,7 +13,7 @@ void setup() {
 
 void loop() {
   VuLoop();
-  //update404();
+  update404();
   LedLoop();
 }
 

@@ -3,8 +3,10 @@
 #define N_PADS 12
 #define MAX_POINTS 100
 #define MAX_VARIATION 12
-#define ENABLE_PREVIEW 0
 #define DOUBLE_TAP_PAD 11
+
+#define ENABLE_PREVIEW false
+#define ENABLE_BONUS_POINTS false
 
 #define FADE_INTERVAL 500
 #define PT_INTERVAL 100
@@ -30,6 +32,7 @@ struct Pad {
   unsigned long lastUpdate;
   boolean touched;
   unsigned long touchStart;
+  unsigned long ptAdded;
 };
 
 struct Vuur {
@@ -43,7 +46,6 @@ struct Vuur {
   int lastPreviewed;
   unsigned long lastPreview;
 
-  unsigned long ptAdded[N_PADS];
   unsigned long nTouchedRecordTime;
   unsigned long doubleTapTime;
 
@@ -142,12 +144,11 @@ void VuLoop() {
     ceiling->cct = 128;
   }
 
-
   // Set coves based on fraction
   vuur->width = 8.0 * fraction;
   for (int i = 0; i < 16; i++) {
     float distanceFactor = 1.0 - distances[i] / vuur->width;
-    coves[i]->hue = (int)(fraction * 255);//hue;
+    coves[i]->hue = hue;
     coves[i]->saturation = saturation;
     coves[i]->brightness = (int)(fraction * (float)brightness * distanceFactor);
     if (coves[i]->brightness < 0) coves[i]->brightness = 0;
@@ -160,7 +161,6 @@ void VuLoop() {
       coves[i]->speed = 0;
     }
   }
-
 
   // Preview
   if (ENABLE_PREVIEW && millis() - vuur->lastPreview < PREVIEW_DURATION) {
@@ -189,17 +189,10 @@ void VuHandleTouch() {
     if (touched) {
       newNTouched++;
 
+      // TODO do in loop
       lamp->hsbTo(pad->hue, pad->saturation, pad->brightness, 100);
 
-      if (millis() - vuur->ptAdded[i] > PT_INTERVAL) {
-        vuur->ptAdded[i] = millis();
-        if (vuur->nTouched < 3) {
-          VuAddPoints(i);
-        } 
-        else {
-          VuAddBonusPoints(i);
-        }
-      }
+      VuAddPoints(pad);
 
       if (newValue) {
         pad->touchStart = millis();
@@ -216,7 +209,7 @@ void VuHandleTouch() {
       }
     } 
     else if (newValue) {
-      VuSetVariation(millis() - pad->touchStart);
+      //VuSetVariation(millis() - pad->touchStart);
 
       if (i == DOUBLE_TAP_PAD && millis() - vuur->doubleTapTime < DOUBLE_TAP_INTERVAL) {
         if (vuur->doubleTapState == 1) {
@@ -268,7 +261,7 @@ int VuTotalPoints() {
 }
 
 void * VuWinningPad() {
-  int winning;
+  int winning = 0;
   int highest = 0;
   for (int i = 0; i < N_PADS; i++) {
     int points = vuur->pads[i]->points;
@@ -290,24 +283,22 @@ void * VuCreatePad(int pin, int hueDeg, int saturationPerc, int brightnessPerc) 
   pad->brightness = (int)( (float)brightnessPerc / 100.0 * 255.0 );
   pad->lastUpdate = millis();
   pad->touched = false;
+  pad->ptAdded = 0;
   return pad;
 }
 
-void VuAddPoints(int arg) {
-  vuur->pads[arg]->points++;
+void VuAddPoints(void *padRef) {
+  Pad *pad = (Pad *)padRef;
+  if (millis() - pad->ptAdded > PT_INTERVAL && VuTotalPoints() < MAX_POINTS) {
+    pad->ptAdded = millis();
+    pad->points += (vuur->nTouched < 3 || !ENABLE_BONUS_POINTS) ? 1 : 3;
 
+    /*
   if (millis() - vuur->lastPreview > PREVIEW_DURATION || vuur->lastPreviewed != arg) {
-    vuur->lastPreviewed = arg;
-    vuur->lastPreview = millis();
-  }
-}
-
-void VuAddBonusPoints(int arg) {
-  vuur->pads[arg]->points += 3;
-
-  if (millis() - vuur->lastPreview > PREVIEW_DURATION || vuur->lastPreviewed != arg) {
-    vuur->lastPreviewed = arg;
-    vuur->lastPreview = millis();
+     vuur->lastPreviewed = arg;
+     vuur->lastPreview = millis();
+     }
+     */
   }
 }
 
@@ -336,4 +327,10 @@ void VuStop() {
 boolean VuIsStopped() {
   return (millis() - vuur->stopped < STOP_DURATION);
 }
+
+
+
+
+
+
 
