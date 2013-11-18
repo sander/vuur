@@ -46,14 +46,14 @@ void setup404() {
   Lithne.addNode(2, XBeeAddress64(0x0013A200, 0x4079CE25)); // cct ceiling tiles
   Lithne.addNode(3, XBeeAddress64(0x0013A200, 0x4079CE26)); // blinds
   Lithne.addNode(9, XBeeAddress64(0x0013A200, 0x4079CE24)); // solime
-  
+
   Lithne.addScope("Breakout404");
-  
+
   for (int i = 0; i < nCoves; i++)
     coves[i] = (ColorCove *)createColorCove(i);
   ceiling = (Ceiling *)createCeiling();
   solime = (Solime *)createSolime();
-  
+
   currentUpdate = 0;
 }
 
@@ -61,12 +61,12 @@ void update404() {
   // this is needed to not overload the connection... at least if we do just 1 msg per loop, something seems to catch errors
   if (millis() - lastSend > interval) {
     lastSend = millis();
-    
+
     if (update404CoveHSB()) return;
     if (update404CoveParametrics()) return;
     if (update404Ceiling()) return;
     if (update404Solime()) return;
-    
+
     currentUpdate++;
   }
 }
@@ -80,7 +80,8 @@ boolean update404Solime() {
     snd();
     solime->info->updated = currentUpdate;
     return true;
-  } else {
+  } 
+  else {
     return false;
   }
 }
@@ -106,7 +107,8 @@ boolean update404CoveHSB() {
     }
     snd();
     return true;
-  } else {
+  } 
+  else {
     return false;
   }
 }
@@ -124,7 +126,7 @@ boolean update404CoveParametrics() {
 
   if (n) {
     fun(1, "setHSB");
-    
+
     for (int i = 0; i < n; i++) {
       arg(updating[i]->id);
       arg(updating[i]->hue);
@@ -134,18 +136,19 @@ boolean update404CoveParametrics() {
     // TODO why did i comment this?
     /*
     fun(1, "parametrics");
-    for (int i = 0; i < n; i++) {
-      arg(updating[i]->id);
-      arg(updating[i]->hue);
-      arg(updating[i]->saturation);
-      arg(updating[i]->brightness);
-      arg(updating[i]->variation);
-      arg(updating[i]->speed);
-    }
-    */
+     for (int i = 0; i < n; i++) {
+     arg(updating[i]->id);
+     arg(updating[i]->hue);
+     arg(updating[i]->saturation);
+     arg(updating[i]->brightness);
+     arg(updating[i]->variation);
+     arg(updating[i]->speed);
+     }
+     */
     snd();
     return true;
-  } else {
+  } 
+  else {
     return false;
   }
 }
@@ -162,7 +165,8 @@ boolean update404Ceiling() {
     snd();
     ceiling->info->updated = currentUpdate;
     return true;
-  } else {
+  } 
+  else {
     return false;
   }
 }
@@ -211,3 +215,4 @@ void * createSolime() {
   solime->brightness = 0;
   return solime;
 }
+

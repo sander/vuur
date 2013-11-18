@@ -5,7 +5,7 @@
 
 void setup() {
   Serial.begin(9600);
-  
+
   setup404();  
   VuSetup();
   LedSetup();
@@ -13,6 +13,7 @@ void setup() {
 
 void loop() {
   VuLoop();
-  update404();
+  //update404();
   LedLoop();
 }
+
