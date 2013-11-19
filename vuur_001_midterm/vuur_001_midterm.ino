@@ -79,6 +79,6 @@ void loop() {
   
   if (vuur->pads[doubleTapPad]->doubleTapped()) vuur->reset();
   
-  //Breakout404.update();
+  Breakout404.update();
 }
 
