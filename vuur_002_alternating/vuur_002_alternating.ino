@@ -38,7 +38,7 @@ void setup() {
   vuur->maxPoints = 100;
   vuur->variation = 0;
   vuur->setCenter(6.5);
-  vuur->touchRecordInterval = 5000;
+  vuur->touchRecordInterval = 20000;
   vuur->pads[doubleTapPad]->listenToDoubleTap();
   
   Breakout404.ceiling->enabled = true;
@@ -67,11 +67,11 @@ void loop() {
     }
   }
   
-  if (vuur->fraction < 0.1) {
+  if (vuur->fraction < 0.2) {
     Breakout404.ceiling->intensity = 150;
     Breakout404.ceiling->cct = 255;
   } else {
-    Breakout404.ceiling->intensity = 20;
+    Breakout404.ceiling->intensity = 10;
     Breakout404.ceiling->cct = 128;
   }
 
