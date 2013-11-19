@@ -40,7 +40,7 @@ void setup() {
 void loop() {
   vuur->update();
   
-  vuur->setRGB(palette[vuur->lastTouched->id], previewChangeTime);
+  vuur->setRGB(new HSBColor(0, 1.0, vuur->fraction), previewChangeTime);
 
   while (Pad *pad = vuur->nextPad()) {
     if (pad->touched && timeSince(pad->ptAdded) > addPointInterval)
@@ -63,13 +63,16 @@ void loop() {
   HSBColor *color = vuur->winning ? palette[vuur->winning->id] : new HSBColor(0, 0.0, 1.0);
   
   vuur->width = 8.0 * vuur->fraction;
+  int variation = (int)( ((float)vuur->variation / (float)maxVariation) * 127.0 );
+  variation = 0;
+  
   while (ColorCove *cove = Breakout404.nextColorCove()) {
     float distance = max(1.0 - vuur->distances[cove->id] / vuur->width, 0);
     cove->hue = color->hue;
     cove->saturation = color->saturation;
     cove->brightness = (int)(vuur->fraction * (float)color->brightness * distance);
     if (vuur->fraction > 0.1) {
-      cove->variation = (int)( ((float)vuur->variation / (float)maxVariation) * 127.0 );
+      cove->variation = variation;
       cove->speed = 200;
     } else {
       cove->variation = 0;
