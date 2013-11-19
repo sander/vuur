@@ -56,7 +56,7 @@ void loop() {
     Breakout404.ceiling->intensity = 200;
     Breakout404.ceiling->cct = 255;
   } else {
-    Breakout404.ceiling->intensity = 20;
+    Breakout404.ceiling->intensity = 0;
     Breakout404.ceiling->cct = 128;
   }
   
