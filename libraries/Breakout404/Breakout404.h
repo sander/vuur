@@ -55,10 +55,14 @@ private:
   bool updateCeiling();
   bool updateSolime();
 
+  int _colorCoveIterator;
+
 public:
   ColorCove *coves[nCoves];
   Ceiling *ceiling;
   Solime *solime;
+
+  ColorCove *nextColorCove();
 };
 
 extern Breakout404Class Breakout404;

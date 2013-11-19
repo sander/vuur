@@ -157,4 +157,13 @@ bool Breakout404Class::updateCeiling() {
   }
 }
 
+ColorCove *Breakout404Class::nextColorCove() {
+  if (_colorCoveIterator == nCoves) {
+    _colorCoveIterator = 0;
+    return NULL;
+  } else {
+    return coves[_colorCoveIterator++];
+  }
+}
+
 Breakout404Class Breakout404;
