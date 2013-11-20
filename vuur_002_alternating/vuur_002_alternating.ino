@@ -87,7 +87,7 @@ void loop() {
       previewing = (previewing + 1) % vuur->nTouched;
       HSBColor *next = palette[preview[previewing]];
       vuur->rgb->hsbTo(next->hue, next->saturation, next->brightness, previewChangeTime);
-    } else if (vuur->fraction > 0.1) {
+    } else if (vuur->fraction > 0.2) {
       warningOn = !warningOn;
       int time = (int)(vuur->fraction * 2000.0);
       if (warningOn)
