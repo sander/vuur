@@ -33,6 +33,7 @@ Vuur::Vuur() {
   }
 
   rgb = new ColorLamp(D10, D11, D12, false);
+  rgb->setAnimationType(QUADRATIC, true, true);
   rgb->intensityTo(255, 0);
   rgb->saturationTo(0, 0);
 
