@@ -5,22 +5,16 @@
  vim: set ts=4:
  */
 
-#if ARDUINO >= 100
 #include "Arduino.h"
-#else
-#include "WProgram.h"
-#include "pins_arduino.h"
-#include "WConstants.h"
-#endif
 
-#include "CapacitiveSensor.h"
+#include "DoubleHardwareTouch.h"
 
 // Constructor /////////////////////////////////////////////////////////////////
 // Function that handles the creation and setup of instances
 
-CapacitiveSensor::CapacitiveSensor(uint8_t sendPin, uint8_t receivePin)
+CapacitiveSensor::CapacitiveSensor(uint16_t sendPin, uint16_t receivePin)
 {
-	uint8_t sPort, rPort;
+	uint16_t sPort, rPort;
 
 	// initialize this instance's variables
 	// Serial.begin(9600);		// for debugging
@@ -62,14 +56,14 @@ CapacitiveSensor::CapacitiveSensor(uint8_t sendPin, uint8_t receivePin)
 // Public Methods //////////////////////////////////////////////////////////////
 // Functions available in Wiring sketches, this library, and other libraries
 
-long CapacitiveSensor::capacitiveSensor(uint8_t samples)
+long CapacitiveSensor::capacitiveSensor(uint16_t samples)
 {
 	total = 0;
 	if (samples == 0) return 0;
 	if (error < 0) return -1;            // bad pin
 
 
-	for (uint8_t i = 0; i < samples; i++) {    // loop for samples parameter - simple lowpass filter
+	for (uint16_t i = 0; i < samples; i++) {    // loop for samples parameter - simple lowpass filter
 		if (SenseOneCycle() < 0)  return -2;   // variable over timeout
 }
 
@@ -107,13 +101,13 @@ long CapacitiveSensor::capacitiveSensor(uint8_t samples)
 
 }
 
-long CapacitiveSensor::capacitiveSensorRaw(uint8_t samples)
+long CapacitiveSensor::capacitiveSensorRaw(uint16_t samples)
 {
 	total = 0;
 	if (samples == 0) return 0;
 	if (error < 0) return -1;                  // bad pin - this appears not to work
 
-	for (uint8_t i = 0; i < samples; i++) {    // loop for samples parameter - simple lowpass filter
+	for (uint16_t i = 0; i < samples; i++) {    // loop for samples parameter - simple lowpass filter
 		if (SenseOneCycle() < 0)  return -2;   // variable over timeout
 	}
 

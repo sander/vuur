@@ -9,11 +9,7 @@
 #ifndef CapacitiveSensor_h
 #define CapacitiveSensor_h
 
-#if ARDUINO >= 100
 #include "Arduino.h"
-#else
-#include "WProgram.h"
-#endif
 
 // library interface description
 class CapacitiveSensor
@@ -21,9 +17,9 @@ class CapacitiveSensor
   // user-accessible "public" interface
   public:
   // methods
-	CapacitiveSensor(uint8_t sendPin, uint8_t receivePin);
-	long capacitiveSensorRaw(uint8_t samples);
-	long capacitiveSensor(uint8_t samples);
+	CapacitiveSensor(uint16_t sendPin, uint16_t receivePin);
+	long capacitiveSensorRaw(uint16_t samples);
+	long capacitiveSensor(uint16_t samples);
 	void set_CS_Timeout_Millis(unsigned long timeout_millis);
 	void reset_CS_AutoCal();
 	void set_CS_AutocaL_Millis(unsigned long autoCal_millis);
@@ -37,13 +33,13 @@ class CapacitiveSensor
 	unsigned long  CS_AutocaL_Millis;
 	unsigned long  lastCal;
 	unsigned long  total;
-	uint8_t sBit;   // send pin's ports and bitmask
-	volatile uint8_t *sReg;
-	volatile uint8_t *sOut;
-	uint8_t rBit;    // receive pin's ports and bitmask 
-	volatile uint8_t *rReg;
-	volatile uint8_t *rIn;
-	volatile uint8_t *rOut;
+	uint16_t sBit;   // send pin's ports and bitmask
+	volatile uint16_t *sReg;
+	volatile uint16_t *sOut;
+	uint16_t rBit;    // receive pin's ports and bitmask 
+	volatile uint16_t *rReg;
+	volatile uint16_t *rIn;
+	volatile uint16_t *rOut;
   // methods
 	int SenseOneCycle(void);
 };
