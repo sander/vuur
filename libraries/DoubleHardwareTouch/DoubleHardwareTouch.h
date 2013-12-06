@@ -36,10 +36,16 @@ class CapacitiveSensor
 	uint16_t sBit;   // send pin's ports and bitmask
 	volatile uint16_t *sReg;
 	volatile uint16_t *sOut;
+  volatile PORT_t *sPortRegister;
+  volatile uint8_t sBitFromBitField;
+  volatile uint8_t *sPinCtrl;
 	uint16_t rBit;    // receive pin's ports and bitmask 
 	volatile uint16_t *rReg;
 	volatile uint16_t *rIn;
 	volatile uint16_t *rOut;
+  volatile uint8_t rBitFromBitField;
+  volatile uint8_t *rPinCtrl;
+  volatile PORT_t *rPortRegister;
   // methods
 	int SenseOneCycle(void);
 };

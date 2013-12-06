@@ -9,6 +9,31 @@
 
 #include "DoubleHardwareTouch.h"
 
+uint8_t getBitFromBitField( uint8_t input ) // Function taken from WInterrupt.c; required for XMega
+{
+  switch(input)
+  {
+  case 0x1:
+  	return 0;
+  case 0x2:
+  	return 1;
+  case 0x4:
+    return 2;
+  case 0x8:
+	 return 3;
+  case 0x10:
+	 return 4;
+  case 0x20:
+    return 5;
+  case 0x40:
+    return 6;
+  case 0x80:
+    return 7;
+  default:
+    return 0;
+  }
+}
+
 // Constructor /////////////////////////////////////////////////////////////////
 // Function that handles the creation and setup of instances
 
@@ -17,37 +42,52 @@ CapacitiveSensor::CapacitiveSensor(uint16_t sendPin, uint16_t receivePin)
 	uint16_t sPort, rPort;
 
 	// initialize this instance's variables
-	// Serial.begin(9600);		// for debugging
+	 Serial.begin(9600);		// for debugging
 	error = 1;
 	loopTimingFactor = 310;		// determined empirically -  a hack
+  // TODO(sander) check this
 	
 	CS_Timeout_Millis = (2000 * (float)loopTimingFactor * (float)F_CPU) / 16000000;
 	CS_AutocaL_Millis = 20000;
     
-	// Serial.print("timwOut =  ");
-	// Serial.println(CS_Timeout_Millis);
+	 Serial.print("timwOut =  ");
+	 Serial.println(CS_Timeout_Millis);
 	
 	// get pin mapping and port for send Pin - from PinMode function in core
 
-#ifdef NUM_DIGITAL_PINS
-	if (sendPin >= NUM_DIGITAL_PINS) error = -1;
-	if (receivePin >= NUM_DIGITAL_PINS) error = -1;
-#endif
-	
+  /*
 	sBit =  digitalPinToBitMask(sendPin);			// get send pin's ports and bitmask
 	sPort = digitalPinToPort(sendPin);
 	sReg = portModeRegister(sPort);
 	sOut = portOutputRegister(sPort);				// get pointer to output register   
+  */
 
+  sBit = digitalPinToBitMask(sendPin);
+  sPortRegister = portRegister(digitalPinToPort(sendPin));
+  sPinCtrl = (uint8_t*)&sPortRegister->PIN0CTRL;
+
+  rBit = digitalPinToBitMask(receivePin);
+  rPortRegister = portRegister(digitalPinToPort(receivePin));
+  rPinCtrl = (uint8_t*)&rPortRegister->PIN0CTRL;
+  rBitFromBitField = getBitFromBitField(rBit);
+  /*
 	rBit = digitalPinToBitMask(receivePin);			// get receive pin's ports and bitmask 
 	rPort = digitalPinToPort(receivePin);
 	rReg = portModeRegister(rPort);
 	rIn  = portInputRegister(rPort);
    	rOut = portOutputRegister(rPort);
+    */
+
+  Serial.print("send");
+  Serial.println(sBit);
+  //Serial.println(&(sPortRegister->DIRSET));
+  Serial.println(*sPinCtrl);
 	
 	// get pin mapping and port for receive Pin - from digital pin functions in Wiring.c
     noInterrupts();
-	*sReg |= sBit;              // set sendpin to OUTPUT 
+	//*sReg |= sBit;              // set sendpin to OUTPUT 
+  sPortRegister->DIRSET = sBit;
+  //sPortRegister->OUTCLR = sBit; // dont need to make input low
     interrupts();
 	leastTotal = 0x0FFFFFFFL;   // input large value for autocalibrate begin
 	lastCal = millis();         // set millis for start
@@ -133,18 +173,29 @@ void CapacitiveSensor::set_CS_Timeout_Millis(unsigned long timeout_millis){
 int CapacitiveSensor::SenseOneCycle(void)
 {
     noInterrupts();
-	*sOut &= ~sBit;        // set Send Pin Register low
+	//*sOut &= ~sBit;        // set Send Pin Register low
+  sPortRegister->OUTCLR = sBit;
 	
-	*rReg &= ~rBit;        // set receivePin to input
-	*rOut &= ~rBit;        // set receivePin Register low to make sure pullups are off
-	
-	*rReg |= rBit;         // set pin to OUTPUT - pin is now LOW AND OUTPUT
-	*rReg &= ~rBit;        // set pin to INPUT 
+	//*rReg &= ~rBit;        // set receivePin to input
+  rPortRegister->DIRCLR = rBit;
 
-	*sOut |= sBit;         // set send Pin High
+	//*rOut &= ~rBit;        // set receivePin Register low to make sure pullups are off
+  rPortRegister->OUTCLR = rBit;
+	
+	//*rReg |= rBit;         // set pin to OUTPUT - pin is now LOW AND OUTPUT
+	//*rReg &= ~rBit;        // set pin to INPUT 
+  rPortRegister->DIRSET = rBit;
+  rPortRegister->DIRCLR = rBit;
+
+
+
+	//*sOut |= sBit;         // set send Pin High
+  sPinCtrl[sBitFromBitField] |= PORT_OPC_PULLUP_gc;
+  //sPortRegister->DIRSET = sBit; //?????
     interrupts();
 
-	while ( !(*rIn & rBit)  && (total < CS_Timeout_Millis) ) {  // while receive pin is LOW AND total is positive value
+	while ( !(rPortRegister->IN & rBit)  && (total < CS_Timeout_Millis) ) {  // while receive pin is LOW AND total is positive value
+	//while ( !(*rIn & rBit)  && (total < CS_Timeout_Millis) ) {  // while receive pin is LOW AND total is positive value
 		total++;
 	}
     
@@ -154,15 +205,27 @@ int CapacitiveSensor::SenseOneCycle(void)
    
 	// set receive pin HIGH briefly to charge up fully - because the while loop above will exit when pin is ~ 2.5V 
     noInterrupts();
-	*rOut  |= rBit;        // set receive pin HIGH - turns on pullup 
-	*rReg |= rBit;         // set pin to OUTPUT - pin is now HIGH AND OUTPUT
-	*rReg &= ~rBit;        // set pin to INPUT 
-	*rOut  &= ~rBit;       // turn off pullup
+	//*rOut  |= rBit;        // set receive pin HIGH - turns on pullup 
+    rPinCtrl[rBitFromBitField] |= PORT_OPC_PULLUP_gc;
+    //rPortRegister->OUTCLR = rBit;
 
-	*sOut &= ~sBit;        // set send Pin LOW
+	//*rReg |= rBit;         // set pin to OUTPUT - pin is now HIGH AND OUTPUT
+    rPortRegister->DIRSET = rBit;
+
+	//*rReg &= ~rBit;        // set pin to INPUT 
+    rPortRegister->DIRCLR = rBit;
+
+	//*rOut  &= ~rBit;       // turn off pullup
+    //rPortRegister->OUTCLR = rBit; //?
+    rPortRegister->DIRSET = rBit; //?
+
+	//*sOut &= ~sBit;        // set send Pin LOW
+    sPortRegister->OUTCLR = sBit;
+
     interrupts();
 
-	while ( (*rIn & rBit) && (total < CS_Timeout_Millis) ) {  // while receive pin is HIGH  AND total is less than timeout
+	while ( (/**rIn & rBit*/ (rPortRegister->IN & rBit)) && (total < CS_Timeout_Millis) ) {  // while receive pin is HIGH  AND total is less than timeout
+	//while ( (*rIn & rBit) && (total < CS_Timeout_Millis) ) {  // while receive pin is HIGH  AND total is less than timeout
 		total++;
 	}
 	// Serial.println(total);
@@ -173,4 +236,5 @@ int CapacitiveSensor::SenseOneCycle(void)
 		return 1;
 	}
 }
+
 
