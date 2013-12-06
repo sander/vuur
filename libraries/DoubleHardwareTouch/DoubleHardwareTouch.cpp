@@ -50,7 +50,7 @@ CapacitiveSensor::CapacitiveSensor(uint16_t sendPin, uint16_t receivePin)
 	CS_Timeout_Millis = (2000 * (float)loopTimingFactor * (float)F_CPU) / 16000000;
 	CS_AutocaL_Millis = 20000;
     
-	 Serial.print("timwOut =  ");
+	 Serial.print("timeOut =  ");
 	 Serial.println(CS_Timeout_Millis);
 	
 	// get pin mapping and port for send Pin - from PinMode function in core
@@ -217,7 +217,8 @@ int CapacitiveSensor::SenseOneCycle(void)
 
 	//*rOut  &= ~rBit;       // turn off pullup
     //rPortRegister->OUTCLR = rBit; //?
-    rPortRegister->DIRSET = rBit; //?
+    //rPortRegister->DIRSET = rBit; //?
+    rPinCtrl[rBitFromBitField] &= ~PORT_OPC_PULLDOWN_gc; // why doesn't this work, it should?
 
 	//*sOut &= ~sBit;        // set send Pin LOW
     sPortRegister->OUTCLR = sBit;
