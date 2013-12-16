@@ -63,107 +63,32 @@ void setup() {
 void loop() {
   vuur->update();
 
-/*
-  int colorsSet = 0;
-
-  while (Pad *pad = vuur->nextPad()) {
-    if (pad->touched && timeSince(pad->ptAdded) > addPointInterval)
-      pad->addPoints((vuur->nTouched < 3 || !enableBonusPoints) ? 1 : 3);
-    else if (pad->points > 0 && timeSince(pad->lastUpdate) > fadeInterval)
-      pad->addPoints(-1);
-
-    if (pad->untouched) {
-      if (!colorsSet < 2) {
-        if (lastColors[1] != pad->id) {
-          lastColors[0] = lastColors[1];
-          lastColors[1] = pad->id;
-        }
-        colorsSet++;
-      }
-    }
-  }
-
-  if (vuur->fraction < 0.2) {
-    Breakout404.ceiling->intensity = 150;
-    Breakout404.ceiling->cct = 50;
-  } 
-  else {
-    Breakout404.ceiling->intensity = 30;
-    Breakout404.ceiling->cct = 200;
-  }
-
-  HSBColor *primary = (lastColors[1] != -1) ? palette[lastColors[1]] : new HSBColor(0, 1.0, 1.0);
-  HSBColor *secondary = (vuur->touchRecord > 1 && (lastColors[0] != -1)) ? palette[lastColors[0]] : primary;
-
-  Serial.print(primary->hue);
-  Serial.print("\t");
-
-  Serial.print(vuur->fraction);
-  Serial.print("\t");
-
-  if (!vuur->rgb->isAnimating()) {
-    if (vuur->nTouched > 0) {
-      int preview[vuur->nTouched];
-      int i = 0;
-      while (Pad *pad = vuur->nextPad())
-        if (pad->touched) preview[i++] = pad->id;
-      previewing = (previewing + 1) % vuur->nTouched;
-      HSBColor *next = palette[preview[previewing]];
-      vuur->rgb->hsbTo(next->hue, next->saturation, next->brightness, previewChangeTime);
-    } 
-    else if (vuur->fraction > 0.2) {
-      warningOn = !warningOn;
-      int time = (int)(vuur->fraction * 2000.0);
-      if (warningOn)
-        vuur->rgb->hsbTo(primary->hue, primary->saturation, 255 - (int)(255.0 * vuur->fraction), time);
-      else
-        vuur->rgb->hsbTo(primary->hue, primary->saturation, (int)((255 - (int)(255.0 * vuur->fraction)) * 0.5), time);
-    } 
-    else {
-      vuur->rgb->hsbTo(0, 0, 0, previewChangeTime);
-    }
-  }
-  */
-  
   vuur->fraction = 0.5;
 
   vuur->width = 8.0 * vuur->fraction;
-  /*
-  if (vuur->touchRecord > 2 && timeSince(alternatedTime) > alternateTime) {
-    alternatedTime = millis();
-    alternated = !alternated;
-  }
-  */
-  //Serial.print("alternate: ");
+  
   HSBColor *color = new HSBColor(50, 1.00, 1.00);
   while (ColorCove *cove = Breakout404.nextColorCove()) {
     float distance = max(1.0 - vuur->distances[cove->id] / vuur->width, 0);
 
-    /*
-    if (alternated) {
-      color = (cove->id % 2) ? primary : secondary;
-    } 
-    else {
-      color = (cove->id % 2) ? secondary : primary;
-    }
-    */
-    //Serial.print(color == primary);
     cove->hue = color->hue;
     cove->saturation = color->saturation;
     cove->brightness = (int)(vuur->fraction * (float)color->brightness * distance);
-    if (vuur->fraction > 0.1) {
-      //cove->variation = (vuur->touchRecord > 2) ? 20 : 0;
-      cove->variation = 0;
-      cove->speed = 220;
-    } 
-    else {
-      cove->variation = 0;
-      cove->speed = 0;
-    }
+    
+    cove->hue2 = cove->hue;
+    cove->saturation2 = cove->saturation;
+    cove->brightness2 = 0;
+    
+    cove->time = random(300, 600);
+    cove->time2 = random(100, 200);
+    /*
+    cove->brightness = 0;
+    cove->brightness2 = 0;
+    cove->time = 0;
+    */
   }
-  //Serial.println();
-
-  //if (vuur->pads[doubleTapPad]->doubleTapped()) vuur->reset();
+  
+  //Breakout404.ceiling->intensity = 0;
 
   Breakout404.update();
 } 
