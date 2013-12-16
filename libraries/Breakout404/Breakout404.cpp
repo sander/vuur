@@ -41,6 +41,16 @@ Breakout404Class::Breakout404Class() {
   for (int i = 0; i < nCoves; i++) {
     coves[i] = new ColorCove;
     coves[i]->id = i;
+    coves[i]->hue = 0;
+    coves[i]->saturation = 0;
+    coves[i]->brightness = 0;
+    coves[i]->variation = 0;
+    coves[i]->speed = 0;
+    coves[i]->time = 0;
+    coves[i]->time2 = 0;
+    coves[i]->hue2 = 0;
+    coves[i]->saturation2 = 0;
+    coves[i]->brightness2 = 0;
   }
   ceiling = new Ceiling;
   solime = new Solime;
@@ -55,8 +65,9 @@ void Breakout404Class::update() {
   if (millis() - lastSend > interval) {
     lastSend = millis();
 
-    if (updateCoveHSB()) return;
-    if (updateCoveParametrics()) return;
+    //if (updateCoveHSB()) return;
+    //if (updateCoveParametrics()) return;
+    if (updateCovePingpong()) return;
     if (updateCeiling()) return;
     if (updateSolime()) return;
 
@@ -81,6 +92,10 @@ bool Breakout404Class::updateSolime() {
 
 bool useParametrics(ColorCove *cove) {
   return cove->variation != 0 && cove->brightness != 0;
+}
+
+bool usePingpong(ColorCove *cove) {
+  return true;
 }
 
 bool Breakout404Class::updateCoveHSB() {
@@ -130,6 +145,50 @@ bool Breakout404Class::updateCoveParametrics() {
       arg(updating[i]->brightness);
       arg(updating[i]->variation);
       arg(updating[i]->speed);
+    }
+    snd();
+    return true;
+  } 
+  else {
+    return false;
+  }
+}
+
+bool Breakout404Class::updateCovePingpong() {
+  ColorCove *updating[maxUpdatePingpong];
+  int n = 0;
+  for (int i = 0; i < nCoves && n < maxUpdatePingpong; i++) {
+    ColorCove *cove = coves[i];
+    if (cove->updated != currentUpdate && usePingpong(cove)) {
+      updating[n++] = cove;
+      cove->updated = currentUpdate;
+    }
+  }
+
+  if (n) {
+    fun(1, "pingpong");
+    for (int i = 0; i < n; i++) {
+      if (updating[i]->time && updating[i]->time2) {
+        arg(updating[i]->id);
+        arg(updating[i]->hue);
+        arg(updating[i]->hue2);
+        arg(updating[i]->saturation);
+        arg(updating[i]->saturation2);
+        arg(updating[i]->brightness);
+        arg(updating[i]->brightness2);
+        arg(updating[i]->time);
+        arg(updating[i]->time2);
+      } else {
+        arg(updating[i]->id);
+        arg(updating[i]->hue);
+        arg(updating[i]->hue);
+        arg(updating[i]->saturation);
+        arg(updating[i]->saturation);
+        arg(updating[i]->brightness);
+        arg(updating[i]->brightness);
+        arg(1000);
+        arg(1000);
+      }
     }
     snd();
     return true;

@@ -14,8 +14,17 @@ public:
   int hue;
   int saturation;
   int brightness;
+
+  // For parametrics mode
   int variation;
   int speed;
+
+  // For pingpong mode
+  int time;
+  int time2;
+  int hue2;
+  int saturation2;
+  int brightness2;
 };
 
 class Ceiling : public LightSource {
@@ -40,6 +49,7 @@ public:
 private:
   const static int nCoves = 16;
   const static int maxUpdateParametrics = 2;
+  const static int maxUpdatePingpong = 3;
   const static int maxUpdateCoveHSB = 4;
   const static unsigned long interval = 500;
 
@@ -51,6 +61,7 @@ private:
   void snd();
 
   bool updateCoveHSB();
+  bool updateCovePingpong();
   bool updateCoveParametrics();
   bool updateCeiling();
   bool updateSolime();
