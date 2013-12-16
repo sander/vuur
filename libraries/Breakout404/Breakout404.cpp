@@ -66,7 +66,7 @@ void Breakout404Class::update() {
     lastSend = millis();
 
     //if (updateCoveHSB()) return;
-    //if (updateCoveParametrics()) return;
+    if (updateCoveParametrics()) return;
     if (updateCovePingpong()) return;
     if (updateCeiling()) return;
     if (updateSolime()) return;
@@ -95,7 +95,7 @@ bool useParametrics(ColorCove *cove) {
 }
 
 bool usePingpong(ColorCove *cove) {
-  return true;
+  return !useParametrics(cove);
 }
 
 bool Breakout404Class::updateCoveHSB() {
