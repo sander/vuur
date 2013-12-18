@@ -34,9 +34,9 @@ def draw
     @values.each_with_index do |v, i|
       #bar_height = if @max[i] == 0 then 0 else v.to_f / @max[i] end
       @max[i] = 1 if @max[i] == 0
-      #color = 255.0 * v.to_f / @max[i]
-      color = 255.0 * v.to_f / 3000
-      #bar_height = height.to_f * v.to_f / 30000
+      color = 255.0 * v.to_f / @max[i]
+      #color = 255.0 * v.to_f / 3000
+      #bar_height = height.to_f * v.to_f / 500
 
       push_matrix
       translate i / @n * size, i % @n * size
