@@ -6,7 +6,7 @@ CALIBRATE_TIME = 5000
 def setup
   size 600, 600
 
-  @port = Serial.new self, '/dev/tty.usbmodem1411', 9600
+  @port = Serial.new self, '/dev/tty.usbmodem1421', 9600
   @values = [0] * 16
   @min = [] #[nil] * 16
   @max = [] #[nil] * 16
