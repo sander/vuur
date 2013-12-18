@@ -58,6 +58,8 @@ void setup() {
 
   Breakout404.ceiling->enabled = true;
   Breakout404.solime->brightness = 0;
+  
+  Breakout404.coves[0]->set(HUE, 255);
 }
 
 void loop() {
