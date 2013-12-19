@@ -21,7 +21,7 @@ NEIGHBORS = {
 }
 WIDTH = 800
 HEIGHT = 600
-SENSOR_DISPLAY = [10, 10, 200, 200]
+SENSOR_DISPLAY = [10, 10, 400, 400]
 
 def setup
   size WIDTH, HEIGHT
@@ -34,8 +34,6 @@ def setup
   @logging = false
   @threshold = 0.3
   @font = create_font 'Karla', 12
-
-  puts @state
 end
 
 def draw
@@ -95,7 +93,9 @@ def set_maxima
 end
 
 def draw_sensed
-  size = width / 4
+  size = SENSOR_DISPLAY[3] / 4
+  push_matrix
+  translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
   sensed_points.each do |i|
     push_matrix
     translate i / 4 * size, i % 4 * size
@@ -104,16 +104,20 @@ def draw_sensed
     rect 0, 0, size, size
     pop_matrix
   end
+  pop_matrix
 end
 
 def draw_touched
-  size = width / 4
+  size = SENSOR_DISPLAY[3] / 4
+  push_matrix
+  translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
   touch_points.each do |i|
     ellipse_mode CENTER
     no_stroke
     fill 255
     ellipse (i / 4 + 0.5) * size, (i % 4 + 0.5) * size, 20, 20
   end
+  pop_matrix
 end
 
 def draw_state
@@ -172,7 +176,6 @@ def key_pressed
       @max = []
       @state = :calibrate_not_touched
     end
-    puts @state
   when 'l'
     @logging = !@logging
   when 'm'
