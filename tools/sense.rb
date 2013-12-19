@@ -42,6 +42,7 @@ def setup
   load_palettes
 
   @arduino = Serial.new self, '/dev/tty.usbmodem1421', 9600
+  @lithne = Serial.new self, '/dev/tty.usbmodem1411', 9600
   @values = []
 
   name = CALIBRATION_FILE
@@ -68,6 +69,9 @@ def setup
     hue2: 0,
     sat2: 0,
     bri2: 0,
+    phue: 0,
+    pbri: 0,
+    psat: 0,
     alternate: 0,
     animate: 0,
     center: 200,
@@ -117,6 +121,14 @@ def draw
     draw_message
     draw_status
   end
+end
+
+#######################################################
+
+def send_to_lithne
+  string = @message.values.join "\t"
+  puts "Sending to lithne..."
+  puts string
 end
 
 #######################################################
@@ -190,6 +202,10 @@ def update
 
   on_touch if touching
   fade_out
+
+  if @update_message and @state == :running
+    send_to_lithne
+  end
 end
 
 def touching
@@ -215,6 +231,12 @@ end
 
 def on_touch
   add_points 1 if millis - @points_changed > ADD_POINT_INTERVAL and @points < 100
+  point = touch_points[0]
+  unless point.nil?
+    color = @palettes[:detail_cold][point]
+    puts 'color'
+    puts color
+  end
 end
 
 def fade_out
@@ -356,9 +378,11 @@ def draw_message
   color_mode HSB, 255
   no_stroke
   fill @message[:hue1], @message[:sat1], @message[:bri1]
-  rect 15 + width, 10, 3 * width - 10, MESSAGE_DISPLAY[3] - 20
+  rect 15 + width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20
   fill @message[:hue2], @message[:sat2], @message[:bri2]
-  rect 15 + 4 * width, 10, 3 * width - 10, MESSAGE_DISPLAY[3] - 20
+  rect 15 + 3 * width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20
+  fill @message[:phue], @message[:psat], @message[:pbri]
+  rect 15 + 5 * width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20
 
   @message.each_with_index do |item, i|
     unless [:hue1, :sat1, :bri1, :hue2, :sat2, :bri2].include? item[0]
