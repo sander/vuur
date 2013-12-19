@@ -1,7 +1,10 @@
+#include <Breakout404.h>
 #include <ColorLamp.h>
+#include <LED.h>
 #include <Lithne.h>
 
 ColorLamp *lamp = new ColorLamp(D11, D12, D14, false);
+ColorLamp * lamp2 = new ColorLamp(D2, D1, D3, false);
 
 String input = "";
 boolean complete = false;
@@ -9,10 +12,6 @@ boolean complete = false;
 boolean on = false;
 
 #define MESSAGE_LENGTH 18
-
-#define K_ON 0
-#define K_HUE1 1
-
 enum MessageKey {
   ON,
   HUE1, SAT1, BRI1,
@@ -27,14 +26,11 @@ enum MessageKey {
   BLINK,
   CEILING
 };
-
 int msg[MESSAGE_LENGTH];
 
 void setup() {
-  Serial.begin(9600);
+  Serial.begin(115200);
 
-
-  //  Serial.begin(115200);
   Lithne.begin(115200, Serial1);
 
   Lithne.addNode(COORDINATOR, XBeeAddress64(0x00000000, 0x00000000));
@@ -88,6 +84,10 @@ void loop() {
   analogWrite(lamp->getChannelRed(),   255-lamp->getRed());
   analogWrite(lamp->getChannelGreen(), 255-lamp->getGreen());
   analogWrite(lamp->getChannelBlue(),  255-lamp->getBlue());
+  
+  analogWrite( lamp2->getChannelRed(),   255-lamp->getRed() );
+  analogWrite( lamp2->getChannelGreen(), 255-lamp->getGreen() );
+  analogWrite( lamp2->getChannelBlue(),  255-lamp->getBlue() ); 
 /*
   if (complete) {
     on = !on;

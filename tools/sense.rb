@@ -41,8 +41,8 @@ def setup
   
   load_palettes
 
-  @arduino = Serial.new self, '/dev/tty.usbmodem1421', 9600
-  @lithne = Serial.new self, '/dev/tty.usbmodem1411', 9600
+  @arduino = Serial.new self, '/dev/tty.usbmodem1421', 115200
+  @lithne = Serial.new self, '/dev/tty.usbmodem1411', 115200 
   @values = []
 
   name = CALIBRATION_FILE
