@@ -1,6 +1,8 @@
 load_library :serial
 import 'processing.serial.Serial'
 
+#full_screen
+
 NEIGHBORS = {
   0 => [1, 4],
   1 => [0, 2, 5],
@@ -19,8 +21,8 @@ NEIGHBORS = {
   14 => [10, 13, 15],
   15 => [11, 14]
 }
-WIDTH = 800
-HEIGHT = 600
+WIDTH = 1440
+HEIGHT = 900
 SENSOR_DISPLAY = [10, 10, 400, 400]
 
 def setup
@@ -124,7 +126,7 @@ def draw_state
   text_size 12
   text_align RIGHT, BOTTOM
   text_font @font
-  text @state.to_s, width - 10, height - 10
+  text "#{@state} | threshold: #{@threshold}", width - 10, height - 10
 end
 
 def sensed_points
@@ -183,6 +185,5 @@ def key_pressed
     puts 'max: ' + @max.inspect
   when '1', '2', '3', '4', '5', '6', '7', '8', '9'
     @threshold = key.to_i / 10.0
-    puts 'set threshold to ' + @threshold.inspect
   end
 end
