@@ -38,6 +38,8 @@ FADE_INTERVAL = 1000
 
 def setup
   size WIDTH, HEIGHT
+  
+  load_palettes
 
   @port = Serial.new self, '/dev/tty.usbmodem1421', 9600
   @values = []
@@ -115,6 +117,24 @@ def draw
     draw_message
     draw_status
   end
+end
+
+#######################################################
+
+def load_palettes
+  @palettes = {}
+  names = [:detail_cold]
+  names.each do |name|
+    img = load_image "/Users/sander/Code/vuur/tools/palette_#{name}.png"
+    image img, 0, 0
+    load_pixels
+    colors = []
+    (0...16).each do |i|
+      colors << pixels[width * (i / 4) + (i % 4)]
+    end
+    @palettes[name] = colors
+  end
+  puts @palettes.inspect
 end
 
 #######################################################
