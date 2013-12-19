@@ -126,9 +126,20 @@ end
 #######################################################
 
 def send_to_lithne
-  string = @message.values.join "\t"
-  puts "Sending to lithne..."
-  puts string
+  string = @message.values.join("\t") + "\n"
+  puts "> Lithne"
+  @lithne.write string
+end
+
+def receive_from_lithne
+  if @lithne.available > 0
+    bytes = ''
+    bytes = @lithne.read_bytes_until 10 while @lithne.available > 0
+    if bytes != ''
+      str = String(bytes)
+      puts '< Lithne: ' + str
+    end
+  end
 end
 
 #######################################################
@@ -203,6 +214,7 @@ def update
   on_touch if touching
   fade_out
 
+  receive_from_lithne
   if @update_message and @state == :running
     send_to_lithne
   end
