@@ -32,7 +32,7 @@ void loop() {
   long start = millis();
   long total[N];
   for (int i = 0; i < N; i++)
-    total[i] = cs[i].capacitiveSensor(1);
+    total[i] = cs[i].capacitiveSensor(2);
 
   Serial.print(millis() - start);
   for (int i = 0; i < N; i++) {
