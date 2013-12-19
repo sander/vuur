@@ -84,6 +84,7 @@ def setup
   @points = 0
   @mode = :alone
   @draw = true
+  @preview = -1;
 
   reset_cache
 
@@ -195,7 +196,7 @@ def update
       if millis - @touch_end_time > TOUCH_COOLDOWN
         @touch_end_time = millis
         @last_touch_duration = millis - @touch_start_time
-        on_touch_end
+        on_touch_end if @state == :running
       end
     end
   end
@@ -211,12 +212,14 @@ def update
     end
   end
 
-  on_touch if touching
-  fade_out
+  if @state == :running
+    on_touch if touching
+    fade_out
 
-  #receive_from_lithne # TODO comment out for actual running; this slows things down
-  if @update_message and @state == :running
-    send_to_lithne
+    #receive_from_lithne # TODO comment out for actual running; this slows things down
+    if @update_message
+      send_to_lithne
+    end
   end
 end
 
@@ -244,7 +247,7 @@ end
 def on_touch
   add_points 1 if millis - @points_changed > ADD_POINT_INTERVAL and @points < 100
   point = touch_points[0]
-  unless point.nil?
+  unless point.nil? or point == @preview
     color = @palettes[:detail_cold][point]
     @message[:phue] = hue(color).round
     @message[:psat] = saturation(color).round
