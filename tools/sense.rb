@@ -63,15 +63,15 @@ def setup
   @receiving = false
   @message = {
     on: 0,
-    hue1: 0,
-    sat1: 0,
-    bri1: 0,
+    hue1: 150,
+    sat1: 200,
+    bri1: 255,
     hue2: 0,
     sat2: 0,
     bri2: 0,
     phue: 0,
-    pbri: 0,
     psat: 0,
+    pbri: 0,
     alternate: 0,
     animate: 0,
     center: 200,
@@ -214,7 +214,7 @@ def update
   on_touch if touching
   fade_out
 
-  receive_from_lithne
+  #receive_from_lithne # TODO comment out for actual running; this slows things down
   if @update_message and @state == :running
     send_to_lithne
   end
@@ -246,8 +246,10 @@ def on_touch
   point = touch_points[0]
   unless point.nil?
     color = @palettes[:detail_cold][point]
-    puts 'color'
-    puts color
+    @message[:phue] = hue(color).round
+    @message[:psat] = saturation(color).round
+    @message[:pbri] = brightness(color).round
+    @update_message = true
   end
 end
 
