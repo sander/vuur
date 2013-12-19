@@ -1,7 +1,7 @@
 load_library :serial
 import 'processing.serial.Serial'
 
-#full_screen
+full_screen
 
 NEIGHBORS = {
   0 => [1, 4],
@@ -41,7 +41,7 @@ def setup
   
   load_palettes
 
-  @port = Serial.new self, '/dev/tty.usbmodem1421', 9600
+  @arduino = Serial.new self, '/dev/tty.usbmodem1421', 9600
   @values = []
 
   name = CALIBRATION_FILE
@@ -231,7 +231,7 @@ end
 
 def read_values
   values = ''
-  values = @port.read_bytes_until 10 while @port.available > 0
+  values = @arduino.read_bytes_until 10 while @arduino.available > 0
   if values != ''
     numbers = String(values).strip.split("\t").map { |v| v.to_i }
     @dt = numbers[0]
