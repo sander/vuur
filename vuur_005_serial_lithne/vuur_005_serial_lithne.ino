@@ -40,11 +40,19 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available()) {
+  if (Serial.available())
     for (int i = 0; i < MESSAGE_LENGTH; i++) {
       msg[i] = Serial.parseInt();
       Serial.read();
     }
+    
+  if (msg[CEILING]) {
+    Breakout404.ceiling->intensity = 150;
+    Breakout404.ceiling->cct = 50;
+  } 
+  else {
+    Breakout404.ceiling->intensity = 10;
+    Breakout404.ceiling->cct = 200;
   }
 
   if (!lamp->isAnimating()) {
