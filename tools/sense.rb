@@ -72,7 +72,7 @@ def setup
     phue: 0,
     psat: 0,
     pbri: 0,
-    alternate: 0,
+    alternate: 0, # boolean
     animate: 0,
     center: 200,
     vary: 0,

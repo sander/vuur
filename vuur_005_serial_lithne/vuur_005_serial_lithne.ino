@@ -40,12 +40,6 @@ void setup() {
 }
 
 void loop() {
-  if (Serial.available())
-    for (int i = 0; i < MESSAGE_LENGTH; i++) {
-      msg[i] = Serial.parseInt();
-      Serial.read();
-    }
-    
   if (msg[CEILING]) {
     Breakout404.ceiling->intensity = 150;
     Breakout404.ceiling->cct = 50;
@@ -63,7 +57,31 @@ void loop() {
     else
       lamp->hsbTo(0, 0, 0, PREVIEW_CHANGE_TIME, true);
   }
+  
+  float center = 8.0 * (float)msg[CENTER] / 255.0;
+  float width = 8.0 * (float)msg[WIDTH] / 255.0;
+  while (ColorCove *cove = Breakout404.nextColorCove()) {
+    int id = cove->id;
+    boolean first = !msg[ALTERNATE] || (id % 2);
+    float distance = max(1.0 - abs( ((id < 8) ? center : 8 - center) - (float)(id % 8) ) / width, 0);
+    cove->hue = msg[first ? HUE1 : HUE2];
+    cove->saturation = msg[first ? SAT1 : SAT2];
+    cove->brightness = (int)((float)msg[first ? BRI1 : BRI2] * distance);
+    // TODO set other pingpong values
+  }
 
+  update();
+}
+
+void read() {
+  if (Serial.available())
+    for (int i = 0; i < MESSAGE_LENGTH; i++) {
+      msg[i] = Serial.parseInt();
+      Serial.read();
+    }
+}
+
+void update() {
   lamp->update();
 
   analogWrite(lamp->getChannelRed(), 255 - lamp->getRed());
@@ -77,22 +95,3 @@ void loop() {
   if (msg[ON])
     Breakout404.update();
 }
-
-void pingpong(int lamp, int hue1, int hue2, int sat1, int sat2, int bri1, int bri2, int t1, int t2) {
-  Lithne.setFunction("pingpong");
-  Lithne.setRecipient(1); // 1
-  Lithne.setScope("Breakout404");
-  Lithne.addArgument(lamp);
-  Lithne.addArgument(hue1);
-  Lithne.addArgument(hue2);
-  Lithne.addArgument(sat1);
-  Lithne.addArgument(sat2);
-  Lithne.addArgument(bri1);
-  Lithne.addArgument(bri2);
-  Lithne.addArgument(t1);
-  Lithne.addArgument(t2);
-  Lithne.send();
-}
-
-
-
