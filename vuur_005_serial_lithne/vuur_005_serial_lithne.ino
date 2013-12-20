@@ -12,7 +12,7 @@ boolean complete = false;
 
 boolean on = false;
 
-#define MESSAGE_LENGTH 18
+const int MESSAGE_LENGTH = 18;
 enum MessageKey {
   ON,
   HUE1, SAT1, BRI1,
@@ -29,16 +29,14 @@ enum MessageKey {
 };
 int msg[MESSAGE_LENGTH];
 
+const int PREVIEW_CHANGE_TIME = 500;
+boolean warningOn = true;
+
 void setup() {
   Serial.begin(115200);
 
-  Lithne.begin(115200, Serial1);
-
-  Lithne.addNode(COORDINATOR, XBeeAddress64(0x00000000, 0x00000000));
-  Lithne.addNode(BROADCAST  , XBeeAddress64(0x00000000, 0x0000FFFF));
-  Lithne.addNode(1, XBeeAddress64(0x0013A200, 0x4079CE37)); // color coves
-
-  Lithne.addScope("Breakout404");
+  Breakout404.ceiling->enabled = true;
+  Breakout404.solime->brightness = 0;
 }
 
 void loop() {
@@ -48,21 +46,26 @@ void loop() {
       Serial.read();
     }
   }
-  
+
   if (!lamp->isAnimating()) {
-    lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], 200, true);
+    if (msg[BREATHE])
+      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(msg[BREATHE] * ((warningOn = !warningOn) ? 1.0 : 0.5)), (int)(1 - (float)msg[BREATHE] / 255.0 * 2000.0));
+    else if (msg[PHUE] || msg[PSAT] || msg[PBRI])
+      lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], PREVIEW_CHANGE_TIME, true);
+    else
+      lamp->hsbTo(0, 0, 0, PREVIEW_CHANGE_TIME, true);
   }
-  
+
   lamp->update();
-  
-  analogWrite(lamp->getChannelRed(), 255-lamp->getRed());
-  analogWrite(lamp->getChannelGreen(), 255-lamp->getGreen());
-  analogWrite(lamp->getChannelBlue(), 255-lamp->getBlue());
-  
-  analogWrite(lamp2->getChannelRed(), 255-lamp->getRed());
-  analogWrite(lamp2->getChannelGreen(), 255-lamp->getGreen());
-  analogWrite(lamp2->getChannelBlue(), 255-lamp->getBlue()); 
-  
+
+  analogWrite(lamp->getChannelRed(), 255 - lamp->getRed());
+  analogWrite(lamp->getChannelGreen(), 255 - lamp->getGreen());
+  analogWrite(lamp->getChannelBlue(), 255 - lamp->getBlue());
+
+  analogWrite(lamp2->getChannelRed(), 255 - lamp->getRed());
+  analogWrite(lamp2->getChannelGreen(), 255 - lamp->getGreen());
+  analogWrite(lamp2->getChannelBlue(), 255 - lamp->getBlue()); 
+
   if (msg[ON])
     Breakout404.update();
 }
@@ -82,5 +85,6 @@ void pingpong(int lamp, int hue1, int hue2, int sat1, int sat2, int bri1, int br
   Lithne.addArgument(t2);
   Lithne.send();
 }
+
 
 
