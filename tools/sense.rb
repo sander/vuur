@@ -84,7 +84,8 @@ def setup
   @points = 0
   @mode = :alone
   @draw = true
-  @preview = -1;
+  @preview = -1
+  @sent = 0
 
   reset_cache
 
@@ -128,7 +129,7 @@ end
 
 def send_to_lithne
   string = @message.values.join("\t") + "\n"
-  puts "> Lithne"
+  @sent += 1
   @lithne.write string
 end
 
@@ -349,7 +350,7 @@ def draw_touched
 end
 
 def status
-  "#{@state} | #{unless @receiving then 'not ' end}receiving values | threshold: #{@threshold} | #{@points} points | #{@touch_amount} touches#{if swiping then ' (swiping)' end} | last touch duration: #{@last_touch_duration} | distance: #{@touch_distance}"
+  "#{@state} | #{unless @receiving then 'not ' end}receiving values | threshold: #{@threshold} | #{@points} points | #{@touch_amount} touches#{if swiping then ' (swiping)' end} | last touch duration: #{@last_touch_duration} | distance: #{@touch_distance} | messages sent: #{@sent}"
 end
 
 def draw_status
