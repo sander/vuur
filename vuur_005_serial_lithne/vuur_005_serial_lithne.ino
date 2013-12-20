@@ -3,8 +3,9 @@
 #include <LED.h>
 #include <Lithne.h>
 
+// Both lamps will take the values provided to lamp.
 ColorLamp *lamp = new ColorLamp(D11, D12, D14, false);
-ColorLamp * lamp2 = new ColorLamp(D2, D1, D3, false);
+ColorLamp *lamp2 = new ColorLamp(D2, D1, D3, false);
 
 String input = "";
 boolean complete = false;
@@ -41,20 +42,6 @@ void setup() {
 }
 
 void loop() {
-  // Serial.println("test");
-  //delay(100);
-
-
-  /*
-  while (Serial.available()) {
-   char in = (char)Serial.read();
-   //Serial.println("char");
-   input += in;
-   //Serial.print(in);
-   if (in == '\n') complete = true;
-   }
-   */
-  
   if (Serial.available()) {
     for (int i = 0; i < MESSAGE_LENGTH; i++) {
       msg[i] = Serial.parseInt();
@@ -63,49 +50,21 @@ void loop() {
   }
   
   if (!lamp->isAnimating()) {
-    /*
-    //green
-    msg[PHUE] = 90;
-    msg[PSAT] = 220;
-    msg[PBRI] = 255;
-    */
-    
-    /*
-    //blue
-    msg[PHUE] = 140;
-    msg[PSAT] = 255;
-    msg[PBRI] = 255;
-    */
     lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], 200, true);
   }
   
   lamp->update();
   
-  analogWrite(lamp->getChannelRed(),   255-lamp->getRed());
+  analogWrite(lamp->getChannelRed(), 255-lamp->getRed());
   analogWrite(lamp->getChannelGreen(), 255-lamp->getGreen());
-  analogWrite(lamp->getChannelBlue(),  255-lamp->getBlue());
+  analogWrite(lamp->getChannelBlue(), 255-lamp->getBlue());
   
-  analogWrite( lamp2->getChannelRed(),   255-lamp->getRed() );
-  analogWrite( lamp2->getChannelGreen(), 255-lamp->getGreen() );
-  analogWrite( lamp2->getChannelBlue(),  255-lamp->getBlue() ); 
-/*
-  if (complete) {
-    on = !on;
-    input = "";
-    complete = false;
-
-    Serial.println(on);
-
-    if (on) {
-      //on = false;
-      //pingpong(5, 80, 80, 150, 150, 200, 255, 1000, 1000);
-    } 
-    else {
-      //on = true;
-      // pingpong(5, 80, 80, 150, 150, 0, 0, 1000, 1000);
-    }
-  }
-  */
+  analogWrite(lamp2->getChannelRed(), 255-lamp->getRed());
+  analogWrite(lamp2->getChannelGreen(), 255-lamp->getGreen());
+  analogWrite(lamp2->getChannelBlue(), 255-lamp->getBlue()); 
+  
+  if (msg[ON])
+    Breakout404.update();
 }
 
 void pingpong(int lamp, int hue1, int hue2, int sat1, int sat2, int bri1, int bri2, int t1, int t2) {
