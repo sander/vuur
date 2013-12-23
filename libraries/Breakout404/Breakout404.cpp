@@ -31,7 +31,7 @@ Breakout404Class::Breakout404Class() {
   Lithne.begin(115200, Serial1);
   Lithne.addNode(COORDINATOR, XBeeAddress64(0x00000000, 0x00000000));
   Lithne.addNode(BROADCAST  , XBeeAddress64(0x00000000, 0x0000FFFF));   
-  Lithne.addNode(1, XBeeAddress64(0x0013A200, 0x4079CE37)); // color coves
+  Lithne.addNode(1, XBeeAddress64(0x0013A200, 0x4079CE37/*40*/)); // color coves
   Lithne.addNode(2, XBeeAddress64(0x0013A200, 0x4079CE25)); // cct tiles
   Lithne.addNode(3, XBeeAddress64(0x0013A200, 0x4079CE26)); // blinds
   Lithne.addNode(9, XBeeAddress64(0x0013A200, 0x4079CE24)); // solime
@@ -65,9 +65,9 @@ void Breakout404Class::update() {
   if (millis() - lastSend > interval) {
     lastSend = millis();
 
-    //if (updateCoveHSB()) return;
-    if (updateCoveParametrics()) return;
-    if (updateCovePingpong()) return;
+    if (updateCoveHSB()) return;
+    //if (updateCoveParametrics()) return;
+    //if (updateCovePingpong()) return;
     if (updateCeiling()) return;
     if (updateSolime()) return;
 
@@ -103,7 +103,7 @@ bool Breakout404Class::updateCoveHSB() {
   int n = 0;
   for (int i = 0; i < nCoves && n < maxUpdateCoveHSB; i++) {
     ColorCove *cove = coves[i];
-    if (cove->updated != currentUpdate && !useParametrics(cove)) {
+    if (cove->updated != currentUpdate /*&& !useParametrics(cove)*/) {
       updating[n++] = cove;
       cove->updated = currentUpdate;
     }

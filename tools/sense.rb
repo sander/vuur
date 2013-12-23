@@ -86,6 +86,7 @@ def setup
   @draw = true
   @preview = -1
   @sent = 0
+  @last_colors = [-1, -1]
 
   reset_cache
 
@@ -134,6 +135,7 @@ def send_to_lithne
 end
 
 def receive_from_lithne
+  #puts 'on?' + @message[:on].inspect
   if @lithne.available > 0
     bytes = ''
     bytes = @lithne.read_bytes_until 10 while @lithne.available > 0
@@ -217,10 +219,13 @@ def update
     on_touch if touching
     fade_out
 
-    #receive_from_lithne # TODO comment out for actual running; this slows things down
-    if @update_message
-      send_to_lithne
-    end
+    # TODO set width etc.
+    ceiling = @message[:ceiling]
+    @message[:ceiling] = if @points < 20 then 1 else 0 end
+    @update_message = true if ceiling != @message[:ceiling]
+
+    receive_from_lithne # TODO comment out for actual running; this slows things down
+    send_to_lithne if @update_message
   end
 end
 
@@ -243,6 +248,15 @@ end
 
 def on_touch_end
   # TODO select colour and set @update_message
+  colors_set = 0
+  touch_points.each do |id|
+    if colors_set < 2
+      unless @last_colors[1] == id
+        # TODO
+      end
+    end
+  end
+  @update_message = true
 end
 
 def on_touch
@@ -487,6 +501,8 @@ def key_pressed
   when 'm'
     puts 'min: ' + @min.inspect
     puts 'max: ' + @max.inspect
+  when 'r'
+    @points = 0
   when '1', '2', '3', '4', '5', '6', '7', '8', '9'
     @threshold = key.to_i / 10.0
   when "\n"

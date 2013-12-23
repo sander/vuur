@@ -40,14 +40,22 @@ void setup() {
 }
 
 void loop() {
+  read();
+  
   if (msg[CEILING]) {
     Breakout404.ceiling->intensity = 150;
     Breakout404.ceiling->cct = 50;
   } 
   else {
-    Breakout404.ceiling->intensity = 10;
+    Breakout404.ceiling->intensity = 0;
     Breakout404.ceiling->cct = 200;
   }
+  //Serial.print("ceiling: ");
+  //Serial.println(Breakout404.ceiling->intensity);
+  //Serial.print("on: ");
+  //Serial.println(msg[ON]);
+  //Serial.print("hue1: ");
+  //Serial.println(msg[HUE1]);
 
   if (!lamp->isAnimating()) {
     if (msg[BREATHE])
@@ -69,15 +77,23 @@ void loop() {
     cove->brightness = (int)((float)msg[first ? BRI1 : BRI2] * distance);
     // TODO set other pingpong values
   }
+  Serial.print("hue: ");
+  Serial.println(Breakout404.coves[7]->brightness);
 
   update();
 }
 
 void read() {
-  if (Serial.available())
+  while (Serial.available())
     for (int i = 0; i < MESSAGE_LENGTH; i++) {
       msg[i] = Serial.parseInt();
       Serial.read();
+      /*
+      Serial.print(i);
+      Serial.print(": ");
+      Serial.println(msg[i]);
+
+      */
     }
 }
 
