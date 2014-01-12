@@ -4,22 +4,10 @@ import 'processing.serial.Serial'
 full_screen
 
 NEIGHBORS = {
-  0 => [1, 4],
-  1 => [0, 2, 5],
-  2 => [1, 3, 6],
-  3 => [2, 7],
-  4 => [0, 5, 8],
-  5 => [1, 4],
-  6 => [2, 7],
-  7 => [3, 6, 11],
-  8 => [4, 9, 12],
-  9 => [8, 13],
-  10 => [11, 14],
-  11 => [7, 10, 15],
-  12 => [8, 13],
-  13 => [9, 12, 14],
-  14 => [10, 13, 15],
-  15 => [11, 14]
+  0 => [1, 4],        1 => [0, 2, 5],     2 => [1, 3, 6],     3 => [2, 7],
+  4 => [0, 5, 8],     5 => [1, 4],        6 => [2, 7],        7 => [3, 6, 11],
+  8 => [4, 9, 12],    9 => [8, 13],       10 => [11, 14],     11 => [7, 10, 15],
+  12 => [8, 13],      13 => [9, 12, 14],  14 => [10, 13, 15], 15 => [11, 14]
 }
 WIDTH = 1440
 HEIGHT = 900
@@ -32,7 +20,7 @@ SWIPE_TIMEOUT = 500
 TOUCH_COOLDOWN = 100
 ADD_POINT_INTERVAL = 100
 ADD_POINT_QUICKLY_INTERVAL = 50
-FADE_INTERVAL = 1000
+FADE_INTERVAL = 200
 
 #######################################################
 
@@ -63,8 +51,8 @@ def setup
   @receiving = false
   @message = {
     on: 0,
-    hue1: 150,
-    sat1: 200,
+    hue1: 222,
+    sat1: 143,
     bri1: 255,
     hue2: 0,
     sat2: 0,
@@ -100,6 +88,12 @@ def setup
   @last_touch_duration = 0
   @swipe_time = 0
   @points_changed = 0
+
+  @sense_time = 0
+  @last_sense_position = 0
+  @sense_amount = 0
+  @sense_amount_time = 0
+  @sense_start_time = 0
 
   @update_message = false
 
@@ -175,11 +169,49 @@ def update
   reset_cache
   @update_message = false
 
+  update_sensed
+  update_touched
+
+  if @state == :running
+    on_touch if touching
+    fade_out
+
+    # TODO set width etc.
+    ceiling = @message[:ceiling]
+    @message[:ceiling] = if @points < 20 then 1 else 0 end
+    @update_message = true if ceiling != @message[:ceiling]
+
+    #receive_from_lithne # TODO comment out for actual running; this slows things down
+    send_to_lithne if @update_message
+  end
+end
+
+def update_sensed
+  sp = sensed_points
+  if sp.length > 0
+    @sense_time = millis
+    if @sense_amount == 0
+      @sense_start_time = millis
+    end
+  end
+  if sp.length >= @sense_amount
+    @sense_amount = sp.length
+    @sense_amount_time = millis
+  elsif @sense_amount > 0 and millis - @sense_amount_time > 300
+    @sense_amount -= 1
+    if @sense_amount == 0
+    end
+  end
+end
+
+def update_touched
   tp = touch_points
+  '''
   if tp.length == 1 and tp[0] != @last_touch_position and millis - @touch_time < SWIPE_TIMEOUT
     # Swiping
     @swipe_time = millis
   end
+  '''
   if tp.length > 0
     # Currently certainly touching
     @touch_time = millis
@@ -214,19 +246,6 @@ def update
       end
     end
   end
-
-  if @state == :running
-    on_touch if touching
-    fade_out
-
-    # TODO set width etc.
-    ceiling = @message[:ceiling]
-    @message[:ceiling] = if @points < 20 then 1 else 0 end
-    @update_message = true if ceiling != @message[:ceiling]
-
-    receive_from_lithne # TODO comment out for actual running; this slows things down
-    send_to_lithne if @update_message
-  end
 end
 
 def touching
@@ -235,7 +254,8 @@ def touching
 end
 
 def swiping
-  millis - @swipe_time < SWIPE_TIMEOUT
+  #millis - @swipe_time < SWIPE_TIMEOUT
+  false
 end
 
 def distance a, b
@@ -249,6 +269,17 @@ end
 def on_touch_end
   # TODO select colour and set @update_message
   colors_set = 0
+  color = @palettes[:detail_cold][@last_touch_position]
+  @message[:hue1] = hue(color).round
+  @message[:sat1] = saturation(color).round
+  @message[:bri1] = brightness(color).round
+
+  default_width = 50
+  @message[:width] = default_width + (@sense_amount / 16.0 * (255.0 - default_width)).to_i
+
+  @update_message = true
+
+  '''
   touch_points.each do |id|
     if colors_set < 2
       unless @last_colors[1] == id
@@ -256,6 +287,7 @@ def on_touch_end
       end
     end
   end
+  '''
   @update_message = true
 end
 
@@ -278,6 +310,8 @@ end
 def add_points pts
   @points += pts
   @points_changed = millis
+  @message[:bri1] = (255.0 * @points / 100).to_i
+  @message[:breathe] = 100 - @points
   @update_message = true
 end
 
@@ -417,7 +451,7 @@ def draw_message
   rect 15 + 5 * width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20
 
   @message.each_with_index do |item, i|
-    unless [:hue1, :sat1, :bri1, :hue2, :sat2, :bri2].include? item[0]
+    unless [:hue1, :sat1, :bri1, :hue2, :sat2, :bri2, :phue, :psat, :pbri].include? item[0]
       text_size 12
       text_align CENTER, CENTER
       text_font @font
