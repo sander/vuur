@@ -31,7 +31,8 @@ void setup() {
 void loop() {
   long start = millis();
   long total[N];
-  for (int i = 0; i < N; i++)
+  total[0] = total[1] = 0;
+  for (int i = 2; i < N; i++)
     total[i] = cs[i].capacitiveSensor(2);
 
   Serial.print(millis() - start);
