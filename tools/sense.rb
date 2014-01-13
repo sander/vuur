@@ -3,12 +3,6 @@ import 'processing.serial.Serial'
 
 full_screen
 
-NEIGHBORS = {
-  0 => [1, 4],        1 => [0, 2, 5],     2 => [1, 3, 6],     3 => [2, 7],
-  4 => [0, 5, 8],     5 => [1, 4],        6 => [2, 7],        7 => [3, 6, 11],
-  8 => [4, 9, 12],    9 => [8, 13],       10 => [11, 14],     11 => [7, 10, 15],
-  12 => [8, 13],      13 => [9, 12, 14],  14 => [10, 13, 15], 15 => [11, 14]
-}
 WIDTH = 1440
 HEIGHT = 900
 SENSOR_DISPLAY = [10, 10, 580, 580]
@@ -33,19 +27,21 @@ def setup
   @lithne = Serial.new self, '/dev/tty.usbmodem1411', 115200 
   @values = []
 
+  @pads = Pad.create_set
+
   name = CALIBRATION_FILE
   if File.exist? name
     data = Marshal.load File.read name
-    @min = data[:min]
-    @max = data[:max]
+    data[:min].each_with_index { |min, i| @pads[i].min = min }
+    data[:max].each_with_index { |min, i| @pads[i].max = min }
     @threshold = data[:threshold]
     @state = :running
   else
-    @min = []
-    @max = []
     @threshold = 0.3
     @state = :calibrate_not_touched
   end
+  @min = @pads.map { |p| p.min }
+  @max = @pads.map { |p| p.max }
   @logging = false
   @font = create_font 'Karla', 12
   @receiving = false
@@ -496,7 +492,7 @@ def touch_points
       point = try[i]
       if sensed.include? point
         points << point
-        NEIGHBORS[point].each do |neighbor|
+        @pads[point].neighbors.each do |neighbor|
           try.delete neighbor if sensed.include? neighbor and neighbor > point
         end
       end
@@ -552,4 +548,30 @@ def key_pressed
     @cached_mode = nil
     background 0
   end
+end
+
+#######################################################
+
+class Pad
+  attr_accessor :neighbors
+  attr_accessor :min, :max
+  attr_accessor :active, :last_activity
+  attr_accessor :points
+
+  def initialize neighbors
+    @neighbors = neighbors
+  end
+
+  def self.create_set
+    neighbors = {
+      0 => [1, 4],        1 => [0, 2, 5],     2 => [1, 3, 6],     3 => [2, 7],
+      4 => [0, 5, 8],     5 => [1, 4],        6 => [2, 7],        7 => [3, 6, 11],
+      8 => [4, 9, 12],    9 => [8, 13],       10 => [11, 14],     11 => [7, 10, 15],
+      12 => [8, 13],      13 => [9, 12, 14],  14 => [10, 13, 15], 15 => [11, 14]
+    }
+    (0...16).map { |i| new neighbors[i] }
+  end
+end
+
+class Log
 end
