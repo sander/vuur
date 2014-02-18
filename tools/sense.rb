@@ -15,7 +15,7 @@ SENSOR_DISPLAY = [10, 10, 580, 580]
 MESSAGE_DISPLAY = [10, 600, 1420, 200]
 CALIBRATION_FILE = 'calibration.dump'
 
-TOUCH_TIMEOUT = 100
+TOUCH_TIMEOUT = 200
 TOUCH_COOLDOWN = 100
 ADD_POINT_INTERVAL = 100
 ADD_POINT_QUICKLY_INTERVAL = 50
@@ -93,6 +93,7 @@ def setup
   @sense_amount = 0
   @sense_amount_time = 0
   @sense_start_time = 0
+  @last_sense = Hash[(0...16).collect { |k| [k, 0] }]
 
   @update_message = false
 
@@ -115,6 +116,7 @@ def draw
     draw_sensed
     #draw_touched
     #draw_mode
+    draw_activated
     draw_message
     draw_status
   end
@@ -162,6 +164,7 @@ end
 def reset_cache
   @cached_sensed_points = nil
   @cached_touch_points = nil
+  @cached_activated_points = nil
 end
 
 def update
@@ -170,6 +173,7 @@ def update
 
   update_sensed
   update_touched
+  update_activated
 
   if @state == :running
     on_touch if touching
@@ -201,6 +205,10 @@ def update_sensed
     if @sense_amount == 0
     end
   end
+end
+
+def update_activated
+  ap = activated_points
 end
 
 def update_touched
@@ -368,7 +376,7 @@ end
 def draw_palette
   no_stroke
   fill 0
-  rect SENSOR_DISPLAY[0], SENSOR_DISPLAY[1], SENSOR_DISPLAY[2], SENSOR_DISPLAY[3]
+  rect 0, 0, SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2], SENSOR_DISPLAY[1] + SENSOR_DISPLAY[3]
   push_matrix
   translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
   width = 10
@@ -419,6 +427,30 @@ def draw_touched
   pop_matrix
 end
 
+def draw_activated
+  size = SENSOR_DISPLAY[3] / 4
+  push_matrix
+  translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
+  activated_points.each do |i|
+    ellipse_mode CENTER
+    stroke 255
+    stroke_weight 2
+    no_fill
+    #no_stroke
+    #fill 255
+    ellipse (i / 4 + 0.5) * size, (i % 4 + 0.5) * size, 20, 20
+  end
+  unless @center.nil?
+    #i = @last_touch_position
+    ellipse_mode CENTER
+    fill center_color
+    stroke 0
+    stroke_weight 5
+    ellipse @center[0] * size, @center[1] * size, 20, 20
+  end
+  pop_matrix
+end
+
 def status
   "
 #{@state}
@@ -435,14 +467,18 @@ end
 def draw_status
   st = status
   unless st == @cached_status
+    x = SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2] + 30
+    y = 10
+    w = width - x
+    h = SENSOR_DISPLAY[3]
     fill 0
     no_stroke
-    rect SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2], SENSOR_DISPLAY[1], width, SENSOR_DISPLAY[3]
+    rect x, SENSOR_DISPLAY[1], w, h
     fill 255
     text_size 12
     text_align LEFT, TOP
     text_font @font
-    text st, SENSOR_DISPLAY[3] + 30, 10
+    text st, x, y
     @cached_status = st
   end
 end
@@ -505,7 +541,10 @@ def sensed_points
       @values.each_with_index do |v, i|
         if @min[i] and @max[i] and v
           value = map v.to_f, @min[i], @max[i], 0.0, 1.0
-          points << i if value >= @threshold
+          if value >= @threshold
+            points << i
+            @last_sense[i] = millis
+          end
         else
         end
       end
@@ -537,6 +576,48 @@ def touch_points
     @cached_touch_points = points
     points
   end
+end
+
+def activated_points
+  if @cached_activated_points
+    @cached_activated_points
+  else
+    points = []
+    sensed = sensed_points
+    for i in 0...16
+      points << i if millis - @last_sense[i] < TOUCH_TIMEOUT
+    end
+    f = 1.0 / points.length
+    @center = points.reduce [0.0, 0.0] do |result, i|
+      pos = position i
+      [result[0] + f * pos[0], result[1] + f * pos[1]]
+    end
+    @center = nil if @center[0] == 0.0 and @center[1] == 0.0
+    @cached_activated_points = points
+    points
+  end
+end
+
+#######################################################
+
+def position i
+  [(i / 4) + 0.5, (i % 4) + 0.5]
+end
+
+def center_color
+  c = [0, 0, 0]
+  f = 1.0 / activated_points.length
+  for i in activated_points
+    pad = @palettes[:default][i]
+    c = [
+      c[0] + f * hue(pad),
+      c[1] + f * saturation(pad),
+      c[2] + f * brightness(pad)
+    ]
+  end
+  puts 'color'
+  puts c.inspect
+  color *c
 end
 
 #######################################################
