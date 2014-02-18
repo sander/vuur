@@ -1,7 +1,7 @@
 load_library :serial
 import 'processing.serial.Serial'
 
-full_screen
+#full_screen
 
 NEIGHBORS = {
   0 => [1, 4],        1 => [0, 2, 5],     2 => [1, 3, 6],     3 => [2, 7],
@@ -16,7 +16,6 @@ MESSAGE_DISPLAY = [10, 600, 1420, 200]
 CALIBRATION_FILE = 'calibration.dump'
 
 TOUCH_TIMEOUT = 100
-SWIPE_TIMEOUT = 500
 TOUCH_COOLDOWN = 100
 ADD_POINT_INTERVAL = 100
 ADD_POINT_QUICKLY_INTERVAL = 50
@@ -47,7 +46,7 @@ def setup
     @state = :calibrate_not_touched
   end
   @logging = false
-  @font = create_font 'Karla', 12
+  @font = create_font 'AvenirNext-DemiBold', 14
   @receiving = false
   @message = {
     on: 0,
@@ -112,9 +111,10 @@ def draw
   end
 
   if @draw
+    draw_palette
     draw_sensed
-    draw_touched
-    draw_mode
+    #draw_touched
+    #draw_mode
     draw_message
     draw_status
   end
@@ -129,7 +129,6 @@ def send_to_lithne
 end
 
 def receive_from_lithne
-  #puts 'on?' + @message[:on].inspect
   if @lithne.available > 0
     bytes = ''
     bytes = @lithne.read_bytes_until 10 while @lithne.available > 0
@@ -144,7 +143,7 @@ end
 
 def load_palettes
   @palettes = {}
-  names = [:detail_cold]
+  names = [:default]
   names.each do |name|
     img = load_image "/Users/sander/Code/vuur/tools/palette_#{name}.png"
     image img, 0, 0
@@ -269,10 +268,15 @@ end
 def on_touch_end
   # TODO select colour and set @update_message
   colors_set = 0
-  color = @palettes[:detail_cold][@last_touch_position]
+  color = @palettes[:default][@last_touch_position]
   @message[:hue1] = hue(color).round
   @message[:sat1] = saturation(color).round
   @message[:bri1] = brightness(color).round
+
+  @message[:phue] = 0
+  @message[:psat] = 0
+  @message[:pbri] = 0
+  @message[:breathe] = 100 - @points
 
   default_width = 50
   @message[:width] = default_width + (@sense_amount / 16.0 * (255.0 - default_width)).to_i
@@ -295,10 +299,11 @@ def on_touch
   add_points 1 if millis - @points_changed > ADD_POINT_INTERVAL and @points < 100
   point = touch_points[0]
   unless point.nil? or point == @preview
-    color = @palettes[:detail_cold][point]
+    color = @palettes[:default][point]
     @message[:phue] = hue(color).round
     @message[:psat] = saturation(color).round
     @message[:pbri] = brightness(color).round
+    @message[:breathe] = 0
     @update_message = true
   end
 end
@@ -310,8 +315,9 @@ end
 def add_points pts
   @points += pts
   @points_changed = millis
-  @message[:bri1] = (255.0 * @points / 100).to_i
-  @message[:breathe] = 100 - @points
+  #@message[:bri1] = (255.0 * @points / 100).to_i
+  @message[:breathe] = 100 - @points if @message[:breathe] > 0
+  @message[:breathe] = 0 if @points == 0
   @update_message = true
 end
 
@@ -359,10 +365,26 @@ end
 
 #######################################################
 
-def draw_sensed
+def draw_palette
   no_stroke
   fill 0
   rect SENSOR_DISPLAY[0], SENSOR_DISPLAY[1], SENSOR_DISPLAY[2], SENSOR_DISPLAY[3]
+  push_matrix
+  translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
+  width = 10
+  size = SENSOR_DISPLAY[3] / 4
+  for i in 0...16 do
+    push_matrix
+    translate i / 4 * size, i % 4 * size
+    stroke @palettes[:default][i]
+    stroke_weight width
+    rect width / 2, width / 2, size - width, size - width
+    pop_matrix
+  end
+  pop_matrix
+end
+
+def draw_sensed
   size = SENSOR_DISPLAY[3] / 4
   push_matrix
   translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
@@ -370,7 +392,7 @@ def draw_sensed
     push_matrix
     translate i / 4 * size, i % 4 * size
     no_stroke
-    fill 124
+    fill @palettes[:default][i]
     rect 0, 0, size, size
     pop_matrix
   end
@@ -398,7 +420,16 @@ def draw_touched
 end
 
 def status
-  "#{@state} | #{unless @receiving then 'not ' end}receiving values | threshold: #{@threshold} | #{@points} points | #{@touch_amount} touches#{if swiping then ' (swiping)' end} | last touch duration: #{@last_touch_duration} | distance: #{@touch_distance} | messages sent: #{@sent}"
+  "
+#{@state}
+#{unless @receiving then 'not ' end}receiving values
+threshold: #{@threshold}
+#{@points} points
+#{@touch_amount} touches#{if swiping then ' (swiping)' end}
+last touch duration: #{@last_touch_duration}
+distance: #{@touch_distance}
+messages sent: #{@sent}
+  ".strip
 end
 
 def draw_status
@@ -406,12 +437,12 @@ def draw_status
   unless st == @cached_status
     fill 0
     no_stroke
-    rect 0, height - 22, width, 22
+    rect SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2], SENSOR_DISPLAY[1], width, SENSOR_DISPLAY[3]
     fill 255
     text_size 12
-    text_align RIGHT, BOTTOM
+    text_align LEFT, TOP
     text_font @font
-    text st, width - 10, height - 10
+    text st, SENSOR_DISPLAY[3] + 30, 10
     @cached_status = st
   end
 end
@@ -551,5 +582,14 @@ def key_pressed
     @cached_status = nil
     @cached_mode = nil
     background 0
+  end
+end
+
+class Interaction
+  attr_accessor :start
+  attr_reader :pads
+
+  def initialize
+    @pads = {}
   end
 end

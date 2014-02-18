@@ -58,12 +58,16 @@ void loop() {
   //Serial.println(msg[HUE1]);
 
   if (!lamp->isAnimating()) {
-    if (msg[BREATHE])
-      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(msg[BREATHE] * ((warningOn = !warningOn) ? 1.0 : 0.5)), (int)(1 - (float)msg[BREATHE] / 255.0 * 2000.0));
-    else if (msg[PHUE] || msg[PSAT] || msg[PBRI])
+    
+    if (msg[BREATHE]) {
+      int duration = (int)((1 - (float)msg[BREATHE] / 255.0) * 2000.0);
+      Serial.println(duration);
+      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(msg[BREATHE] * 2.55 * ((warningOn = !warningOn) ? 1.0 : 0.1)), duration);
+    } else if (msg[PHUE] || msg[PSAT] || msg[PBRI]) {
       lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], PREVIEW_CHANGE_TIME, true);
-    else
+    } else {
       lamp->hsbTo(0, 0, 0, PREVIEW_CHANGE_TIME, true);
+    }
   }
   
   float center = 8.0 * (float)msg[CENTER] / 255.0;
