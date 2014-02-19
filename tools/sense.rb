@@ -209,6 +209,11 @@ end
 
 def update_activated
   ap = activated_points
+  if ap.length == 0 and not @previous_activated_points.nil? and @previous_activated_points.length > 0
+    on_activated_end
+  end
+
+  @previous_activated_points = ap
 end
 
 def update_touched
@@ -274,6 +279,7 @@ end
 #######################################################
 
 def on_touch_end
+  return
   # TODO select colour and set @update_message
   colors_set = 0
   color = @palettes[:default][@last_touch_position]
@@ -303,11 +309,29 @@ def on_touch_end
   @update_message = true
 end
 
+def on_activated_end
+  @message[:hue1] = @message[:phue]
+  @message[:sat1] = @message[:psat]
+  @message[:bri1] = @message[:pbri]
+
+  @message[:phue] = 0
+  @message[:psat] = 0
+  @message[:pbri] = 0
+  @message[:breathe] = 100 - @points
+
+  default_width = 50
+  @message[:width] = default_width + (@previous_activated_points.length / 16.0 * (255.0 - default_width)).to_i
+
+  @update_message = true
+end
+
 def on_touch
   add_points 1 if millis - @points_changed > ADD_POINT_INTERVAL and @points < 100
-  point = touch_points[0]
+  #point = touch_points[0]
+  point = @center
   unless point.nil? or point == @preview
-    color = @palettes[:default][point]
+    #color = @palettes[:default][point]
+    color = center_color
     @message[:phue] = hue(color).round
     @message[:psat] = saturation(color).round
     @message[:pbri] = brightness(color).round
@@ -456,7 +480,7 @@ def status
 #{@state}
 #{unless @receiving then 'not ' end}receiving values
 threshold: #{@threshold}
-#{@points} points
+<<<#{@points} points>>>
 #{@touch_amount} touches#{if swiping then ' (swiping)' end}
 last touch duration: #{@last_touch_duration}
 distance: #{@touch_distance}
@@ -592,6 +616,7 @@ def activated_points
       pos = position i
       [result[0] + f * pos[0], result[1] + f * pos[1]]
     end
+    @previous_center = @center
     @center = nil if @center[0] == 0.0 and @center[1] == 0.0
     @cached_activated_points = points
     points
@@ -615,10 +640,24 @@ def center_color
       c[2] + f * brightness(pad)
     ]
   end
-  puts 'color'
-  puts c.inspect
   color *c
 end
+
+"""
+def previous_center_color
+  c = [0, 0, 0]
+  f = 1.0 / @previous_activated_points.length
+  for i in @previous_activated_points
+    pad = @palettes[:default][i]
+    c = [
+      c[0] + f * hue(pad),
+      c[1] + f * saturation(pad),
+      c[2] + f * brightness(pad)
+    ]
+  end
+  color *c
+end
+"""
 
 #######################################################
 

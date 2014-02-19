@@ -4,8 +4,9 @@
 #include <Lithne.h>
 
 // Both lamps will take the values provided to lamp.
-ColorLamp *lamp = new ColorLamp(D11, D12, D14, false);
-ColorLamp *lamp2 = new ColorLamp(D2, D1, D3, false);
+//ColorLamp *lamp = new ColorLamp(D11, D12, D14, false);
+//ColorLamp *lamp2 = new ColorLamp(D2, D1, D3, false);
+ColorLamp *lamp = new ColorLamp(D2, D0, D1, false);
 
 String input = "";
 boolean complete = false;
@@ -104,13 +105,15 @@ void read() {
 void update() {
   lamp->update();
 
-  analogWrite(lamp->getChannelRed(), 255 - lamp->getRed());
-  analogWrite(lamp->getChannelGreen(), 255 - lamp->getGreen());
-  analogWrite(lamp->getChannelBlue(), 255 - lamp->getBlue());
+  analogWrite(lamp->getChannelRed(), lamp->getRed());
+  analogWrite(lamp->getChannelGreen(), lamp->getGreen());
+  analogWrite(lamp->getChannelBlue(), lamp->getBlue());
 
+/*
   analogWrite(lamp2->getChannelRed(), 255 - lamp->getRed());
   analogWrite(lamp2->getChannelGreen(), 255 - lamp->getGreen());
   analogWrite(lamp2->getChannelBlue(), 255 - lamp->getBlue()); 
+  */
 
   if (msg[ON])
     Breakout404.update();
