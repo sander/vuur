@@ -35,6 +35,8 @@ boolean warningOn = true;
 
 void setup() {
   Serial.begin(115200);
+  
+  lamp->setAnimationType(QUADRATIC, true, true);
 
   Breakout404.ceiling->enabled = true;
   Breakout404.solime->brightness = 0;
@@ -60,14 +62,13 @@ void loop() {
 
   if (!lamp->isAnimating()) {
     
-    if (msg[BREATHE]) {
-      int duration = (int)((1 - (float)msg[BREATHE] / 255.0) * 2000.0);
-      Serial.println(duration);
-      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(msg[BREATHE] * 2.55 * ((warningOn = !warningOn) ? 1.0 : 0.1)), duration);
+    if (msg[BREATHE] && !msg[CEILING]) {
+      int duration = (int)((1 - (float)msg[BREATHE] / 100.0) * 2000.0);
+      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(/*msg[BREATHE] **/ 100 * 2.55 * ((warningOn = !warningOn) ? 0.8 : 0.4)), duration);
     } else if (msg[PHUE] || msg[PSAT] || msg[PBRI]) {
       lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], PREVIEW_CHANGE_TIME, true);
     } else {
-      lamp->hsbTo(0, 0, 0, PREVIEW_CHANGE_TIME, true);
+      lamp->hsbTo(msg[HUE1], msg[SAT1], 0, PREVIEW_CHANGE_TIME, true);
     }
   }
   

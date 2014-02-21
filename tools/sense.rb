@@ -180,6 +180,7 @@ def update
     fade_out
 
     # TODO set width etc.
+    @message[:bri1] = (255.0 / 100.0 * @points).round # TODO
     ceiling = @message[:ceiling]
     @message[:ceiling] = if @points < 20 then 1 else 0 end
     @update_message = true if ceiling != @message[:ceiling]
@@ -330,6 +331,7 @@ def on_touch
   #point = touch_points[0]
   point = @center
   unless point.nil? or point == @preview
+    @preview = point
     #color = @palettes[:default][point]
     color = center_color
     @message[:phue] = hue(color).round
