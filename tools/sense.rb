@@ -21,6 +21,11 @@ ADD_POINT_INTERVAL = 100
 ADD_POINT_QUICKLY_INTERVAL = 50
 FADE_INTERVAL = 200
 
+TAP_AMOUNT = 3
+TAP_TIMEOUT = 2000
+
+APPLY_TIMEOUT = 3000
+
 #######################################################
 
 def setup
@@ -85,6 +90,7 @@ def setup
   @touch_distance = 0
   @last_touch_position = -1
   @last_touch_duration = 0
+  @last_touch_durations = []
   @swipe_time = 0
   @points_changed = 0
 
@@ -214,6 +220,12 @@ def update_activated
     on_activated_end
   end
 
+  if touching and millis - @touch_start_time > APPLY_TIMEOUT
+    @message[:hue1] = @message[:phue]
+    @message[:sat1] = @message[:psat]
+    @message[:bri1] = @message[:pbri]
+  end
+
   @previous_activated_points = ap
 end
 
@@ -244,6 +256,7 @@ def update_touched
       if millis - @touch_end_time > TOUCH_COOLDOWN
         @touch_end_time = millis
         @last_touch_duration = millis - @touch_start_time
+        @last_touch_durations = @last_touch_durations.unshift([@last_touch_duration, millis]).slice(0, TAP_AMOUNT)
         on_touch_end if @state == :running
       end
     end
@@ -318,10 +331,13 @@ def on_activated_end
   @message[:phue] = 0
   @message[:psat] = 0
   @message[:pbri] = 0
-  @message[:breathe] = 100 - @points
+  @message[:breathe] = if @points == 0 then 0 elsif @points == 100 then 1 else 100 - @points end
 
-  default_width = 50
-  @message[:width] = default_width + (@previous_activated_points.length / 16.0 * (255.0 - default_width)).to_i
+  @message[:animate] = if @last_touch_durations.length == TAP_AMOUNT and millis - @last_touch_durations[-1][1] < TAP_TIMEOUT then 1 else 0 end
+
+  default_width = 30
+  max_activated = 13.0
+  @message[:width] = default_width + (@previous_activated_points.length / max_activated * (255.0 - default_width)).to_i
 
   @update_message = true
 end
@@ -350,7 +366,10 @@ def add_points pts
   @points += pts
   @points_changed = millis
   #@message[:bri1] = (255.0 * @points / 100).to_i
-  @message[:breathe] = 100 - @points if @message[:breathe] > 0
+  unless @message[:pbri] > 0
+    @message[:breathe] = if @points == 0 then 0 elsif @points == 100 then 1 else 100 - @points end
+  end
+  #@message[:breathe] = 100 - @points if @message[:breathe] > 0
   @message[:breathe] = 0 if @points == 0
   @update_message = true
 end

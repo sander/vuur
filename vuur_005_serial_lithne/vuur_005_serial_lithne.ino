@@ -81,6 +81,13 @@ void loop() {
     cove->hue = msg[first ? HUE1 : HUE2];
     cove->saturation = msg[first ? SAT1 : SAT2];
     cove->brightness = (int)((float)msg[first ? BRI1 : BRI2] * distance);
+    
+    int time = random(200, 1000);
+    cove->hue2 = cove->hue;
+    cove->saturation2 = cove->saturation;
+    cove->brightness2 = (int)((float)cove->brightness * 0.5);
+    cove->time = time;
+    cove->time2 = time;
     // TODO set other pingpong values
   }
   Serial.print("hue: ");
