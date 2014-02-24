@@ -33,6 +33,9 @@ int msg[MESSAGE_LENGTH];
 const int PREVIEW_CHANGE_TIME = 500;
 boolean warningOn = true;
 
+const int REGISTER_INTERVAL = 50000;
+long lastRegistered = 0;
+
 void setup() {
   Serial.begin(115200);
   
@@ -44,6 +47,10 @@ void setup() {
 
 void loop() {
   read();
+  
+  if (Lithne.available()) {
+    processLithneMessage();
+  }
   
   if (msg[CEILING]) {
     Breakout404.ceiling->intensity = 150;
@@ -82,22 +89,32 @@ void loop() {
     cove->saturation = msg[first ? SAT1 : SAT2];
     cove->brightness = (int)((float)msg[first ? BRI1 : BRI2] * distance);
     
-    int time = random(200, 1000);
-    cove->hue2 = cove->hue;
-    cove->saturation2 = cove->saturation;
-    cove->brightness2 = (int)((float)cove->brightness * 0.5);
-    cove->time = time;
-    cove->time2 = time;
-    // TODO set other pingpong values
+    if (msg[ANIMATE]) {
+      int time = random(50, 200);
+      cove->hue2 = cove->hue;
+      cove->saturation2 = cove->saturation;
+      cove->brightness2 = 40;
+      cove->time = time;
+      cove->time2 = time;
+    } else {
+      cove->time = cove->time2 = 0;
+    }
   }
-  Serial.print("hue: ");
-  Serial.println(Breakout404.coves[7]->brightness);
 
   update();
+  
+  if (millis() - lastRegistered > REGISTER_INTERVAL) {
+    Lithne.setFunction("registerSensorListener");
+    Lithne.setRecipient(34);
+    Lithne.setScope("Breakout404");
+    Lithne.send();
+    lastRegistered = millis();
+    Serial.println("register: ");
+  }
 }
 
 void read() {
-  while (Serial.available())
+  while (Serial.available()) {
     for (int i = 0; i < MESSAGE_LENGTH; i++) {
       msg[i] = Serial.parseInt();
       Serial.read();
@@ -108,6 +125,17 @@ void read() {
 
       */
     }
+  }
+}
+
+void processLithneMessage() {
+  if (Lithne.functionIs("motion")) {
+    Serial.print("motion: ");
+    Serial.println(Lithne.getArgument(0));
+  } else if (Lithne.functionIs("loudness")) {
+    Serial.print("loudness: ");
+    Serial.println(Lithne.getArgument(0));
+  }
 }
 
 void update() {

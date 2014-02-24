@@ -104,6 +104,8 @@ def setup
   @update_message = false
 
   background 0
+
+  log 'Time: ' + Time.new.inspect
 end
 
 def draw
@@ -134,6 +136,7 @@ def send_to_lithne
   string = @message.values.join("\t") + "\n"
   @sent += 1
   @lithne.write string
+  log 'message: ' + string
 end
 
 def receive_from_lithne
@@ -141,10 +144,13 @@ def receive_from_lithne
     bytes = ''
     bytes = @lithne.read_bytes_until 10 while @lithne.available > 0
     if bytes != ''
-      str = String(bytes)
-      puts '< Lithne: ' + str
+      log String(bytes)
     end
   end
+end
+
+def log str
+  puts "LOG(#{millis}): #{str}"
 end
 
 #######################################################
@@ -162,7 +168,6 @@ def load_palettes
     end
     @palettes[name] = colors
   end
-  puts @palettes.inspect
 end
 
 #######################################################
@@ -191,7 +196,7 @@ def update
     @message[:ceiling] = if @points < 20 then 1 else 0 end
     @update_message = true if ceiling != @message[:ceiling]
 
-    #receive_from_lithne # TODO comment out for actual running; this slows things down
+    receive_from_lithne # TODO comment out for actual running; this slows things down
     send_to_lithne if @update_message
   end
 end
@@ -218,6 +223,10 @@ def update_activated
   ap = activated_points
   if ap.length == 0 and not @previous_activated_points.nil? and @previous_activated_points.length > 0
     on_activated_end
+  end
+
+  if @previous_activated_points != ap
+    log 'activated: ' + ap.inspect
   end
 
   if touching and millis - @touch_start_time > APPLY_TIMEOUT
@@ -328,15 +337,19 @@ def on_activated_end
   @message[:sat1] = @message[:psat]
   @message[:bri1] = @message[:pbri]
 
+  @message[:hue2] = @message[:hue1]
+  @message[:sat2] = @message[:sat1]
+  @message[:bri2] = (@message[:bri1] / 2.0).to_i
+
   @message[:phue] = 0
   @message[:psat] = 0
   @message[:pbri] = 0
   @message[:breathe] = if @points == 0 then 0 elsif @points == 100 then 1 else 100 - @points end
 
-  @message[:animate] = if @last_touch_durations.length == TAP_AMOUNT and millis - @last_touch_durations[-1][1] < TAP_TIMEOUT then 1 else 0 end
+  @message[:alternate] = if @last_touch_durations.length == TAP_AMOUNT and millis - @last_touch_durations[-1][1] < TAP_TIMEOUT then 1 else 0 end
 
   default_width = 30
-  max_activated = 13.0
+  max_activated = 3.0
   @message[:width] = default_width + (@previous_activated_points.length / max_activated * (255.0 - default_width)).to_i
 
   @update_message = true
