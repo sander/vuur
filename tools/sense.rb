@@ -30,11 +30,11 @@ APPLY_TIMEOUT = 3000
 
 def setup
   size WIDTH, HEIGHT
-  
+
   load_palettes
 
   @arduino = Serial.new self, '/dev/tty.usbmodem1421', 115200
-  @lithne = Serial.new self, '/dev/tty.usbmodem1411', 115200 
+  @lithne = Serial.new self, '/dev/tty.usbmodem1411', 115200
   @values = []
 
   name = CALIBRATION_FILE
@@ -445,6 +445,15 @@ def draw_palette
     stroke @palettes[:default][i]
     stroke_weight width
     rect width / 2, width / 2, size - width, size - width
+
+
+    fill 255
+    text_size 12
+    text_align CENTER, CENTER
+    text_font @font
+    text "#{i}", size / 2, size / 2
+    fill 0
+
     pop_matrix
   end
   pop_matrix
@@ -584,7 +593,7 @@ def draw_message
       text "#{item[0]}\n#{item[1]}", 10 + (i + 0.5) * width, MESSAGE_DISPLAY[3] / 2
     end
   end
-  
+
   pop_matrix
 end
 
