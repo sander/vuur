@@ -1,32 +1,54 @@
-load_library :serial
-import 'processing.serial.Serial'
+# Configuration
 
+# Load in full screen?
 #full_screen
 
+# Screen size and layout (x, y, width, height)
+WIDTH = 1440
+HEIGHT = 900
+SENSOR_DISPLAY = [10, 10, 580, 580]
+MESSAGE_DISPLAY = [10, 600, 1420, 200]
+
+# Time intervals are in milliseconds
+
+# How long to wait before marking a pad as untouched
+TOUCH_COOLDOWN = 100
+
+# How long a pad needs to sense a high value before it is considered touched
+TOUCH_TIMEOUT = 200
+
+# How long to wait before adding another point
+ADD_POINT_INTERVAL = 200
+
+# How long to wait before removing a point
+FADE_INTERVAL = 1000
+
+# How many taps are needed before activating the 'alternate' mode
+TAP_AMOUNT = 3
+
+# Time interval within which TAP_AMOUNT taps need to be done
+TAP_TIMEOUT = 2000
+
+# During a long press, how long to wait before the action is applied
+APPLY_TIMEOUT = 3000
+
+#######################################################
+
+# Which pads are next to which pads
 NEIGHBORS = {
   0 => [1, 4],        1 => [0, 2, 5],     2 => [1, 3, 6],     3 => [2, 7],
   4 => [0, 5, 8],     5 => [1, 4],        6 => [2, 7],        7 => [3, 6, 11],
   8 => [4, 9, 12],    9 => [8, 13],       10 => [11, 14],     11 => [7, 10, 15],
   12 => [8, 13],      13 => [9, 12, 14],  14 => [10, 13, 15], 15 => [11, 14]
 }
-WIDTH = 1440
-HEIGHT = 900
-SENSOR_DISPLAY = [10, 10, 580, 580]
-MESSAGE_DISPLAY = [10, 600, 1420, 200]
+
+# Where to store the sensor calibration
 CALIBRATION_FILE = 'calibration.dump'
 
-TOUCH_TIMEOUT = 200
-TOUCH_COOLDOWN = 100
-ADD_POINT_INTERVAL = 100
-ADD_POINT_QUICKLY_INTERVAL = 50
-FADE_INTERVAL = 200
-
-TAP_AMOUNT = 3
-TAP_TIMEOUT = 2000
-
-APPLY_TIMEOUT = 3000
-
 #######################################################
+
+load_library :serial
+import 'processing.serial.Serial'
 
 def setup
   size WIDTH, HEIGHT
@@ -35,8 +57,11 @@ def setup
 
   @arduino = Serial.new self, '/dev/tty.usbmodem1421', 115200
   @lithne = Serial.new self, '/dev/tty.usbmodem1411', 115200
+
+  # Store the last measured sensor values
   @values = []
 
+  # Initialise calibration values
   name = CALIBRATION_FILE
   if File.exist? name
     data = Marshal.load File.read name
@@ -50,33 +75,46 @@ def setup
     @threshold = 0.3
     @state = :calibrate_not_touched
   end
-  @logging = false
+
+  # Use to draw on screen
   @font = create_font 'AvenirNext-DemiBold', 14
+
+  # Set to true once sensor data has come in
   @receiving = false
+
+  # Message, the values of which are sent to Lithne on send_to_lithne
   @message = {
-    on: 0,
-    hue1: 222,
+    on: 0,        # Send signals to Breakout 404?
+    hue1: 222,    # Main effect color
     sat1: 143,
     bri1: 255,
-    hue2: 0,
+    hue2: 0,      # Secondary effect color
     sat2: 0,
     bri2: 0,
-    phue: 0,
+    phue: 0,      # Preview color
     psat: 0,
     pbri: 0,
-    alternate: 0, # boolean
-    animate: 0,
-    center: 200,
-    vary: 0,
-    width: 100,
-    breathe: 0,
-    blink: 0,
-    ceiling: 1
+    alternate: 0, # Show alternating secondary effect color? 1 or 0
+    animate: 0,   # Instead of using the secondary color,
+                  # animate and animate with the dimmed main color
+    center: 200,  # Center of light effect in room, 0-255 mapped to 0.0-8.0
+    vary: 0,      # Ignored
+    width: 100,   # Width of light effect, 0-255 mapped to 0.0-8.0
+    breathe: 0,   # Preview breathe duration between 0 (0 s) and 100 (2 s)
+    blink: 0,     # Ignored
+    ceiling: 1    # Enable main ceiling light? 1 or 0
   }
+
+  # Points between 0 (no effect) and 100 (full effect)
   @points = 0
-  @mode = :alone
+
+  # Draw on screen? Very inefficient, disable for long-term usage
   @draw = true
+
+  # Which point coordinates is the preview based on
   @preview = -1
+
+  # Amount of messages sent
   @sent = 0
   @last_colors = [-1, -1]
 
@@ -116,14 +154,11 @@ def draw
     when :calibrate_not_touched then set_minima
     when :calibrate_touched then set_maxima
     end
-    log_values if @logging and @values
   end
 
   if @draw
     draw_palette
     draw_sensed
-    #draw_touched
-    #draw_mode
     draw_activated
     draw_message
     draw_status
@@ -320,15 +355,6 @@ def on_touch_end
 
   @update_message = true
 
-  '''
-  touch_points.each do |id|
-    if colors_set < 2
-      unless @last_colors[1] == id
-        # TODO
-      end
-    end
-  end
-  '''
   @update_message = true
 end
 
@@ -346,6 +372,7 @@ def on_activated_end
   @message[:pbri] = 0
   @message[:breathe] = if @points == 0 then 0 elsif @points == 100 then 1 else 100 - @points end
 
+  # TODO Is this ok?
   @message[:alternate] = if @last_touch_durations.length == TAP_AMOUNT and millis - @last_touch_durations[-1][1] < TAP_TIMEOUT then 1 else 0 end
 
   default_width = 30
@@ -357,11 +384,9 @@ end
 
 def on_touch
   add_points 1 if millis - @points_changed > ADD_POINT_INTERVAL and @points < 100
-  #point = touch_points[0]
   point = @center
   unless point.nil? or point == @preview
     @preview = point
-    #color = @palettes[:default][point]
     color = center_color
     @message[:phue] = hue(color).round
     @message[:psat] = saturation(color).round
@@ -474,26 +499,6 @@ def draw_sensed
   pop_matrix
 end
 
-def draw_touched
-  size = SENSOR_DISPLAY[3] / 4
-  push_matrix
-  translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
-  touch_points.each do |i|
-    ellipse_mode CENTER
-    no_stroke
-    fill 255
-    ellipse (i / 4 + 0.5) * size, (i % 4 + 0.5) * size, 20, 20
-  end
-  if @last_touch_position > -1
-    i = @last_touch_position
-    ellipse_mode CENTER
-    stroke 255
-    no_fill
-    ellipse (i / 4 + 0.5) * size, (i % 4 + 0.5) * size, 20, 20
-  end
-  pop_matrix
-end
-
 def draw_activated
   size = SENSOR_DISPLAY[3] / 4
   push_matrix
@@ -547,20 +552,6 @@ def draw_status
     text_font @font
     text st, x, y
     @cached_status = st
-  end
-end
-
-def draw_mode
-  unless @mode == @cached_mode
-    fill 0
-    no_stroke
-    rect SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2], SENSOR_DISPLAY[1], width, SENSOR_DISPLAY[3]
-    text_size 12
-    text_align CENTER, CENTER
-    text_font @font
-    fill 255
-    text "#{@mode}", (width + SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2]) / 2, SENSOR_DISPLAY[1] + SENSOR_DISPLAY[3] * 0.5
-    @cached_mode = @mode
   end
 end
 
@@ -724,8 +715,6 @@ def key_pressed
     end
   when 'o'
     @message[:on] = 1 - @message[:on]
-  when 'l'
-    @logging = !@logging
   when 'm'
     puts 'min: ' + @min.inspect
     puts 'max: ' + @max.inspect
@@ -733,13 +722,6 @@ def key_pressed
     @points = 0
   when '1', '2', '3', '4', '5', '6', '7', '8', '9'
     @threshold = key.to_i / 10.0
-  when "\n"
-    case @mode
-    when :alone then @mode = :group_early
-    when :group_early then @mode = :group_noisy
-    when :group_noisy then @mode = :group_quiet
-    when :group_quiet then @mode = :alone
-    end
   when 'd'
     @draw = !@draw
     @cached_status = nil
