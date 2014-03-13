@@ -41,7 +41,7 @@ void loop() {
   read();
 
   if (!lamp->isAnimating()) {
-    /*
+    
     if (msg[BREATHE] && !msg[CEILING]) {
       int duration = (int)((1 - (float)msg[BREATHE] / 100.0) * 2000.0);
       lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(100 * 2.55 * ((warningOn = !warningOn) ? 0.8 : 0.4)), duration);
@@ -50,8 +50,8 @@ void loop() {
     } else {
       lamp->hsbTo(msg[HUE1], msg[SAT1], 0, PREVIEW_CHANGE_TIME, true);
     }
-    */
-    lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], PREVIEW_CHANGE_TIME, true);
+    
+    //lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], PREVIEW_CHANGE_TIME, true);
   }
 
   update();

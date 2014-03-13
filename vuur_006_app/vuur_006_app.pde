@@ -41,8 +41,7 @@ final String CALIBRATION_FILE = "calibration.dump";
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 import processing.serial.*;
-import ili.lithne.Lithne;
-import ili.lithne.NodeManager;
+import ili.lithne.*;
 
 Lithne lithne;
 final NodeManager nm = new NodeManager();
@@ -78,7 +77,7 @@ class State {
 int state;
 
 // Message, the values of which are sent to Lithne on send_to_lithne
-class Message {
+class VuurMessage {
   int on = 0;          // Send signals to Breakout 404?
   int hue1 = 222;      // Main effect color
   int sat1 = 143;
@@ -128,13 +127,12 @@ class Message {
 
   void sendToLithne() {
     String message = toString();
-    println("sending to lithne");
     lithneSerial.write(message);
     sent += 1;
     log("message", message);
   }
 }
-Message message = new Message();
+VuurMessage message = new VuurMessage();
 
 // Points between 0 (no effect) and 100 (full effect)
 byte points = 0;
@@ -180,6 +178,56 @@ float[] center = null;
 float[] previous_center = null;
 
 int[] values = new int[16];
+
+boolean hasRun = false;
+
+char parameterArray[] = {
+  // Local Indrect
+  2, // 2 colors
+  0, // col 1: yellow
+  128, // col 2: red
+  255, // sat 1: full
+  255, // sat 2: full
+  255, // bright 1: full
+  255, // bright 2: full
+  10, // var
+  0, // spd
+
+  // Peripheral Indirect
+  2, // 2 colors
+  127, // col 1: blue
+  0, // col 2: red
+  255, // sat 1: full
+  0, // sat 2: full
+  0, // bright 1: full
+  0, // bright 2: full
+  15, // var
+  0, // spd
+
+  // Local Direct
+  1, // 1 colors
+  42, // col 1: yellow
+  0, // col 2: red
+  255, // sat 1: full
+  255, // sat 2: full
+  255, // bright 1: full
+  255, // bright 2: full
+  5, // var
+  0, // spd
+
+  // Peripheral Direct
+  1, // 1 colors
+  42, // col 1: yellow
+  0, // col 2: red
+  255, // sat 1: full
+  255, // sat 2: full
+  255, // bright 1: full
+  255, // bright 2: full
+  5, // var
+  0, // spd
+
+  255
+};
 
 void setup() {
   size(WIDTH, HEIGHT);
@@ -282,6 +330,15 @@ void update() {
   updateTouched();
   updateActivated();
 
+  if (message.on == 1) {
+    if (!hasRun) {
+      setUserLocation(250, 480);
+      //setUserLocation(250, 480);
+      sendParamArray();
+      hasRun = true;
+    }
+  }
+
   if (state == State.RUNNING) {
     if (touching())
       on_touch();
@@ -297,8 +354,51 @@ void update() {
     // TODO comment out for actual running; this slows things down.
     //receive_from_lithne();
 
-    if (message.update)
-      message.sendToLithne();
+    if (message.update) {      
+      // TODO set parameter array 
+      parameterArray[1] = char(message.hue1);
+      parameterArray[3] = char(message.sat1);
+      parameterArray[5] = char(message.bri1);
+
+
+      /*
+       float center = 8.0 * (float)msg[CENTER] / 255.0;
+       float width = 8.0 * (float)msg[WIDTH] / 255.0;
+       while (ColorCove *cove = Breakout404.nextColorCove()) {
+       int id = cove->id;
+       boolean first = !msg[ALTERNATE] || (id % 2);
+       float distance = max(1.0 - abs( ((id < 8) ? center : 8 - center) - (float)(id % 8) ) / width, 0);
+       cove->hue = msg[first ? HUE1 : HUE2];
+       cove->saturation = msg[first ? SAT1 : SAT2];
+       cove->brightness = (int)((float)msg[first ? BRI1 : BRI2] * distance);
+       
+       if (msg[ANIMATE]) {
+       int time = random(50, 200);
+       cove->hue2 = cove->hue;
+       cove->saturation2 = cove->saturation;
+       cove->brightness2 = 40;
+       cove->time = time;
+       cove->time2 = time;
+       } else {
+       cove->time = cove->time2 = 0;
+       }
+       }
+       */
+
+      sendParamArray();
+
+      Message msg  =  new Message();
+      msg.setFunction("setCCTParameters");
+      msg.setScope("Breakout404");
+      msg.toXBeeAddress64( nm.getXBeeAddress64("CCT Ceiling Tiles") );
+      for (int i = 0; i < 5; i++) {
+        msg.addArgument(i);
+        msg.addArgument(1);
+        msg.addArgument((message.ceiling == 1) ? 255 : 10);
+        msg.addArgument((message.ceiling == 1) ? 50 : 200);
+      }
+      lithne.send(msg);
+    }
   }
 }
 
@@ -433,6 +533,7 @@ void on_activated_end() {
   message.psat = 0;
   message.pbri = 0;
   message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
+  message.sendToLithne();
 
   // TODO Is this ok?
   //@message[:alternate] = if @last_touch_durations.length == TAP_AMOUNT and millis - @last_touch_durations[-1][1] < TAP_TIMEOUT then 1 else 0 end
@@ -455,6 +556,7 @@ void on_touch() {
     message.psat = round(saturation(c));
     message.pbri = round(brightness(c));
     message.breathe = 0;
+    message.sendToLithne();
     message.update = true;
   }
 }
@@ -635,38 +737,38 @@ void draw_status() {
 }
 
 void draw_message() {
-   pushMatrix();
-   translate(MESSAGE_DISPLAY[0], MESSAGE_DISPLAY[1]);
-   
-   // background
-   noStroke();
-   fill(40);
-   rect(0, 0, MESSAGE_DISPLAY[2], MESSAGE_DISPLAY[3]);
-   
-   int width = (MESSAGE_DISPLAY[2] - 20) / 18;
-   
-   noStroke();
-   fill(message.hue1, message.sat1, message.bri1);
-   rect(15 + width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20);
-   fill(message.hue2, message.sat2, message.bri2);
-   rect(15 + 3 * width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20);
-   fill(message.phue, message.psat, message.pbri);
-   rect(15 + 5 * width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20);
-   
-   textSize(12);
-   textAlign(CENTER, CENTER);
-   textFont(font);
-   fill(255);
-   text("on\n" + Integer.toString(message.on), 10 + 0.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("alternate\n" + Integer.toString(message.alternate), 10 + 9.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("animate\n" + Integer.toString(message.animate), 10 + 10.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("center\n" + Integer.toString(message.center), 10 + 11.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("vary\n" + Integer.toString(message.vary), 10 + 12.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("width\n" + Integer.toString(message.width), 10 + 13.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("breathe\n" + Integer.toString(message.breathe), 10 + 14.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("blink\n" + Integer.toString(message.blink), 10 + 15.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("ceiling\n" + Integer.toString(message.ceiling), 10 + 16.5 * width, MESSAGE_DISPLAY[3] / 2);
-   popMatrix();
+  pushMatrix();
+  translate(MESSAGE_DISPLAY[0], MESSAGE_DISPLAY[1]);
+
+  // background
+  noStroke();
+  fill(40);
+  rect(0, 0, MESSAGE_DISPLAY[2], MESSAGE_DISPLAY[3]);
+
+  int width = (MESSAGE_DISPLAY[2] - 20) / 18;
+
+  noStroke();
+  fill(message.hue1, message.sat1, message.bri1);
+  rect(15 + width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20);
+  fill(message.hue2, message.sat2, message.bri2);
+  rect(15 + 3 * width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20);
+  fill(message.phue, message.psat, message.pbri);
+  rect(15 + 5 * width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20);
+
+  textSize(12);
+  textAlign(CENTER, CENTER);
+  textFont(font);
+  fill(255);
+  text("on\n" + Integer.toString(message.on), 10 + 0.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("alternate\n" + Integer.toString(message.alternate), 10 + 9.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("animate\n" + Integer.toString(message.animate), 10 + 10.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("center\n" + Integer.toString(message.center), 10 + 11.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("vary\n" + Integer.toString(message.vary), 10 + 12.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("width\n" + Integer.toString(message.width), 10 + 13.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("breathe\n" + Integer.toString(message.breathe), 10 + 14.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("blink\n" + Integer.toString(message.blink), 10 + 15.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("ceiling\n" + Integer.toString(message.ceiling), 10 + 16.5 * width, MESSAGE_DISPLAY[3] / 2);
+  popMatrix();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -824,29 +926,72 @@ void keyPressed() {
 
 int[] xyToHSB(float x, float y) // Range 0-1
 {
-  int[] hsb = {255,255,255};
- 
+  int[] hsb = {
+    255, 255, 255
+  };
+
   // First calc saturation based on the distance to the centre.
   float dx = abs(x - 0.5);
   float dy = abs(y - 0.5);
-  float d = sqrt( pow(dx, 2)+pow(dy,2)  );
+  float d = sqrt( pow(dx, 2)+pow(dy, 2)  );
   d = constrain(d, 0, 0.5); // d may go up to 0.7 or so, so we take the horizontal max dist as max.
-                            // If we wish to start desaturation not from the edge, but further inwards, this value may be reduced; for instance to 3 or 2
+  // If we wish to start desaturation not from the edge, but further inwards, this value may be reduced; for instance to 3 or 2
   float sat = map(d, 0, 0.5, 0, 255); // map distance to centre to the saturation
   hsb[1] = int(sat); // Saturation: 
   //println("Calculated d:" + d + ", and based Saturation on that: " + sat);
   // Now calculate the color
   // This is based on the angular position of the XY in relation to the centre
- 
+
   PVector vect = new PVector(x-0.5, y-0.5);
- 
+
   float heading = vect.heading();
   float ang = degrees(heading);
-  if( ang < 0 ) { ang += 360; }
+  if ( ang < 0 ) { 
+    ang += 360;
+  }
   float hue = map(ang, 0, 360, 0, 255);
   hsb[0] = int(hue);
   //println("Calculated a:" + ang + " based on heading: "+heading+", and based Hue on that: " + hue);
- 
+
   // We keep max bright because this is calced later on
   return hsb;
 }
+
+/////////////////////////////////////////
+
+void sendParamArray()
+{
+  setLightParameters( parameterArray );
+}
+
+void setLightParameters( char paramArray[] )
+{
+  Message msg  =  new Message();
+  msg.toXBeeAddress64( nm.getXBeeAddress64("Color Coves") );
+  msg.setFunction( "sizedParameters" );
+  msg.setScope( "Breakout404" );  
+
+  for (int i = 0; i < paramArray.length; i++)
+  {
+    msg.addByte(paramArray[i]);
+  }
+
+  //println("SENDING NEW MSG: " + msg.toString());
+  lithne.send( msg );
+}
+
+void setUserLocation( int x, int y )
+{
+  Message msg  =  new Message();
+  msg.toXBeeAddress64( nm.getXBeeAddress64("Color Coves") );
+  msg.setFunction( "setUserLocation" );
+  msg.setScope( "Breakout404" );  
+
+  msg.addArgument(x);
+  msg.addArgument(y);
+
+
+  //println("SENDING NEW MSG: " + msg.toString());
+  lithne.send( msg );
+}
+
