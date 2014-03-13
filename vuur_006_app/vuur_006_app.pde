@@ -31,7 +31,7 @@ final int TAP_AMOUNT = 3;
 final int TAP_TIMEOUT = 2000;
 
 // During a long press, how long to wait before the action is applied
-final int APPLY_TIMEOUT = 3000;
+final int APPLY_TIMEOUT = 0;//TODO 3000;
 
 final int MESSAGE_INTERVAL = 100;
 
@@ -944,7 +944,7 @@ int[] xyToHSB(float x, float y) // Range 0-1
   float dx = abs(x - 0.5);
   float dy = abs(y - 0.5);
   float d = sqrt( pow(dx, 2)+pow(dy, 2)  );
-  d = constrain(d, 0, 0.7); // d may go up to 0.7 or so, so we take the horizontal max dist as max.
+  d = constrain(d, 0, 0.5); // d may go up to 0.7 or so, so we take the horizontal max dist as max.
   // If we wish to start desaturation not from the edge, but further inwards, this value may be reduced; for instance to 3 or 2
   float sat = map(d, 0, 0.5, 0, 255); // map distance to centre to the saturation
   hsb[1] = int(sat); // Saturation: 

@@ -26,8 +26,8 @@ enum MessageKey {
 };
 int msg[MESSAGE_LENGTH];
 
-const unsigned long SWITCH_TIME = 100;
-const unsigned long PREVIEW_CHANGE_TIME = 500;
+const unsigned long SWITCH_TIME = 50;
+const unsigned long PREVIEW_CHANGE_TIME = 100;
 const unsigned long BREATHE_TIME = 2000;
 boolean warningOn = true;
 
@@ -50,24 +50,30 @@ void loop() {
   read();
 
   int newMode = IDLE;
-  if (msg[BREATHE] && !msg[CEILING])
+  if (msg[BREATHE]) // && !msg[CEILING])
     newMode = BREATHING;
   else if (msg[PBRI])
     newMode = PREVIEWING;
-
+    
   int changeTime = (newMode != mode) ? SWITCH_TIME : 0;
-  if (changeTime || !lamp->isAnimating()) {
-    mode = newMode;
+  //changeTime = 0;
+  mode = newMode;
+  if (changeTime != 0 || !lamp->isAnimating()) {
     int duration = (int)((1 - (float)msg[BREATHE] / 100.0) * (float)BREATHE_TIME);
+    //duration = 1000;
+    int time;
     switch (mode) {
     case BREATHING:
-      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(100 * 2.55 * ((warningOn = !warningOn) ? 0.8 : 0.4)), changeTime || duration);
+      time = (changeTime) ? changeTime : duration;
+      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(100 * 2.55 * ((warningOn = !warningOn) ? 0.8 : 0.2)), time, true);
       break;
     case PREVIEWING:
-      lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], changeTime || PREVIEW_CHANGE_TIME, true);
+      time = (changeTime) ? changeTime : PREVIEW_CHANGE_TIME;
+      lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], time, true);
       break;
     case IDLE:
-      lamp->hsbTo(msg[HUE1], msg[SAT1], 0, changeTime || PREVIEW_CHANGE_TIME, true);
+      time = (changeTime) ? changeTime : PREVIEW_CHANGE_TIME;
+      lamp->hsbTo(msg[HUE1], msg[SAT1], 0, time, true);
       break;
     }
   }
