@@ -168,6 +168,7 @@ end
 #######################################################
 
 def send_to_lithne
+  puts 'sending to lithne'
   string = @message.values.join("\t") + "\n"
   @sent += 1
   @lithne.write string
@@ -175,6 +176,7 @@ def send_to_lithne
 end
 
 def receive_from_lithne
+  puts 'receiving from lithne'
   if @lithne.available > 0
     bytes = ''
     bytes = @lithne.read_bytes_until 10 while @lithne.available > 0
@@ -696,6 +698,7 @@ end
 #######################################################
 
 def key_pressed
+  puts "key pressed"
   case key
   when ' '
     case @state
@@ -727,14 +730,5 @@ def key_pressed
     @cached_status = nil
     @cached_mode = nil
     background 0
-  end
-end
-
-class Interaction
-  attr_accessor :start
-  attr_reader :pads
-
-  def initialize
-    @pads = {}
   end
 end

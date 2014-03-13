@@ -1,11 +1,7 @@
-#include <Breakout404.h>
 #include <ColorLamp.h>
 #include <LED.h>
 #include <Lithne.h>
 
-// Both lamps will take the values provided to lamp.
-//ColorLamp *lamp = new ColorLamp(D11, D12, D14, false);
-//ColorLamp *lamp2 = new ColorLamp(D2, D1, D3, false);
 ColorLamp *lamp = new ColorLamp(D2, D0, D1, false);
 
 String input = "";
@@ -30,45 +26,108 @@ enum MessageKey {
 };
 int msg[MESSAGE_LENGTH];
 
-const int PREVIEW_CHANGE_TIME = 500;
+const unsigned long PREVIEW_CHANGE_TIME = 500;
 boolean warningOn = true;
 
-const int REGISTER_INTERVAL = 50000;
-long lastRegistered = 0;
+const unsigned long REGISTER_INTERVAL = 50000;
+unsigned long lastRegistered = 0;
+
+enum Phase {
+  DUMMY,
+  SET_USER_LOCATION,
+  RUN
+};
+int phase = 0;
+boolean sendUpdate = true;
+boolean updateCeiling = true;
+int prevCeiling = 1;
+
+const unsigned long SEND_INTERVAL = 50;
+unsigned long lastSend = 0;
+
+char parameterArray[] = {
+  // Local Indrect
+  1, // 2 colors
+  42, // col 1: yellow
+  0, // col 2: red
+  255, // sat 1: full
+  255, // sat 2: full
+  255, // bright 1: full
+  255, // bright 2: full
+  10, // var
+  130, // spd
+ 
+  // Peripheral Indirect
+  1, // 2 colors
+  127, // col 1: blue
+  0, // col 2: red
+  255, // sat 1: full
+  0, // sat 2: full
+  0, // bright 1: full
+  0, // bright 2: full
+  15, // var
+  40, // spd
+ 
+  // Local Direct (ignored)
+  1, // 1 colors
+  42, // col 1: yellow
+  0, // col 2: red
+  255, // sat 1: full
+  255, // sat 2: full
+  255, // bright 1: full
+  255, // bright 2: full
+  5, // var
+  40, // spd
+ 
+  // Peripheral Direct (ignored)
+  1, // 1 colors
+  42, // col 1: yellow
+  0, // col 2: red
+  255, // sat 1: full
+  255, // sat 2: full
+  255, // bright 1: full
+  255, // bright 2: full
+  5, // var
+  40, // spd
+};
 
 void setup() {
   Serial.begin(115200);
+    
+  Lithne.begin(115200, Serial1);
+  Lithne.addNode(COORDINATOR, XBeeAddress64(0x00000000, 0x00000000));
+  Lithne.addNode(BROADCAST  , XBeeAddress64(0x00000000, 0x0000FFFF));   
+  Lithne.addNode(1, XBeeAddress64(0x0013A200, 0x4079CE37/*40*/)); // color coves
+  Lithne.addNode(2, XBeeAddress64(0x0013A200, 0x4079CE25)); // cct tiles
+  Lithne.addNode(9, XBeeAddress64(0x0013A200, 0x4079CE24)); // solime
+  Lithne.addScope("Breakout404");  
+  
+  lastSend = millis();
   
   lamp->setAnimationType(QUADRATIC, true, true);
 
-  Breakout404.ceiling->enabled = true;
-  Breakout404.solime->brightness = 0;
+  // TODO handle ceiling and solime
 }
 
 void loop() {
-  read();
+  if (read()) {
+    parameterArray[1] = msg[HUE1];
+    parameterArray[3] = msg[SAT1];
+    parameterArray[5] = msg[BRI1];
+    
+    sendUpdate = true;
+  }
   
   if (Lithne.available()) {
     processLithneMessage();
   }
   
-  if (msg[CEILING]) {
-    Breakout404.ceiling->intensity = 150;
-    Breakout404.ceiling->cct = 50;
-  } 
-  else {
-    Breakout404.ceiling->intensity = 0;
-    Breakout404.ceiling->cct = 200;
+  if (msg[CEILING] != prevCeiling) {
+    updateCeiling = true;
+    prevCeiling = msg[CEILING];
   }
-  //Serial.print("ceiling: ");
-  //Serial.println(Breakout404.ceiling->intensity);
-  //Serial.print("on: ");
-  //Serial.println(msg[ON]);
-  //Serial.print("hue1: ");
-  //Serial.println(msg[HUE1]);
 
   if (!lamp->isAnimating()) {
-    
     if (msg[BREATHE] && !msg[CEILING]) {
       int duration = (int)((1 - (float)msg[BREATHE] / 100.0) * 2000.0);
       lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(/*msg[BREATHE] **/ 100 * 2.55 * ((warningOn = !warningOn) ? 0.8 : 0.4)), duration);
@@ -79,6 +138,7 @@ void loop() {
     }
   }
   
+  /*
   float center = 8.0 * (float)msg[CENTER] / 255.0;
   float width = 8.0 * (float)msg[WIDTH] / 255.0;
   while (ColorCove *cove = Breakout404.nextColorCove()) {
@@ -100,6 +160,7 @@ void loop() {
       cove->time = cove->time2 = 0;
     }
   }
+  */
 
   update();
   
@@ -113,19 +174,15 @@ void loop() {
   }
 }
 
-void read() {
+boolean read() {
   while (Serial.available()) {
     for (int i = 0; i < MESSAGE_LENGTH; i++) {
       msg[i] = Serial.parseInt();
       Serial.read();
-      /*
-      Serial.print(i);
-      Serial.print(": ");
-      Serial.println(msg[i]);
-
-      */
+      return true;
     }
   }
+  return false;
 }
 
 void processLithneMessage() {
@@ -145,12 +202,64 @@ void update() {
   analogWrite(lamp->getChannelGreen(), lamp->getGreen());
   analogWrite(lamp->getChannelBlue(), lamp->getBlue());
 
-/*
-  analogWrite(lamp2->getChannelRed(), 255 - lamp->getRed());
-  analogWrite(lamp2->getChannelGreen(), 255 - lamp->getGreen());
-  analogWrite(lamp2->getChannelBlue(), 255 - lamp->getBlue()); 
-  */
+  if (msg[ON]) {
+    if (millis() - lastSend > SEND_INTERVAL) {
+      switch (phase) {
+        case DUMMY:
+        case SET_USER_LOCATION:
+          setUserLocation(250, 500);
+          phase++;
+          break;
+        case RUN:
+          if (sendUpdate) {
+            sendParamArray();
+            sendUpdate = false;
+          } else if (updateCeiling) {
+            sendCeiling();
+            updateCeiling = false;
+          }
+          break;
+      }
+    }
+  }
+}
 
-  if (msg[ON])
-    Breakout404.update();
+void sendParamArray() {
+  setLightParameters( parameterArray );
+}
+ 
+void setLightParameters( char paramArray[] ) {
+  Lithne.setFunction("lightParameters");
+  Lithne.setScope("Breakout404");
+  Lithne.setRecipient(1);
+  for (int i = 0; i < 36; i++) {
+    Lithne.addByte(paramArray[i]);
+  }
+  send();
+}
+
+void setCeiling() {
+  
+    if (msg[CEILING]) {
+      Breakout404.ceiling->intensity = 150;
+      Breakout404.ceiling->cct = 50;
+    } else {
+      Breakout404.ceiling->intensity = 0;
+      Breakout404.ceiling->cct = 200; 
+    }
+}
+
+void setUserLocation(int x, int y) {
+  Lithne.setFunction("setUserLocation");
+  Lithne.setScope("Breakout404");
+  Lithne.setRecipient(BROADCAST);
+  Lithne.addArgument(x);
+  Lithne.addArgument(y);
+  send();
+}
+
+void send() {
+  Lithne.send();
+  Serial.println("sent");
+  lastSend = millis();
 }

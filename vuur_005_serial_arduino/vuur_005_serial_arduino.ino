@@ -26,14 +26,18 @@ void setup() {
   if (!AUTO_CALIBRATE)
     for (int i = 0; i < N; i++)
       cs[i].set_CS_AutocaL_Millis(0xFFFFFFFF);
+      
 }
 
 void loop() {
   long start = millis();
-  long total[N];
-  total[0] = total[1] = 0;
+  long total[N];  
+  for (int j = 0; j < N; j++)  {
+    total[j] = 0;
+  }
   for (int i = 0; i < N; i++)
-    total[i] = cs[i].capacitiveSensor(2);
+    if (i != 0 && i != 1 && i != 2)
+      total[i] = cs[i].capacitiveSensor(2);
 
   Serial.print(millis() - start);
   for (int i = 0; i < N; i++) {
