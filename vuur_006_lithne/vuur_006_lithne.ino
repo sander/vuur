@@ -26,32 +26,50 @@ enum MessageKey {
 };
 int msg[MESSAGE_LENGTH];
 
+const unsigned long SWITCH_TIME = 100;
 const unsigned long PREVIEW_CHANGE_TIME = 500;
+const unsigned long BREATHE_TIME = 2000;
 boolean warningOn = true;
+
+enum Mode {
+  IDLE,
+  BREATHING,
+  PREVIEWING
+};
+int mode = IDLE;
 
 void setup() {
   Serial.begin(115200);
-  
+
   lamp->setAnimationType(QUADRATIC, true, true);
-  
+
   lamp->hsbTo(255, 0, 255, 0, true);
 }
 
 void loop() {
   read();
 
-  if (!lamp->isAnimating()) {
-    
-    if (msg[BREATHE] && !msg[CEILING]) {
-      int duration = (int)((1 - (float)msg[BREATHE] / 100.0) * 2000.0);
-      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(100 * 2.55 * ((warningOn = !warningOn) ? 0.8 : 0.4)), duration);
-    } else if (msg[PHUE] || msg[PSAT] || msg[PBRI]) {
-      lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], PREVIEW_CHANGE_TIME, true);
-    } else {
-      lamp->hsbTo(msg[HUE1], msg[SAT1], 0, PREVIEW_CHANGE_TIME, true);
+  int newMode = IDLE;
+  if (msg[BREATHE] && !msg[CEILING])
+    newMode = BREATHING;
+  else if (msg[PBRI])
+    newMode = PREVIEWING;
+
+  int changeTime = (newMode != mode) ? SWITCH_TIME : 0;
+  if (changeTime || !lamp->isAnimating()) {
+    mode = newMode;
+    int duration = (int)((1 - (float)msg[BREATHE] / 100.0) * (float)BREATHE_TIME);
+    switch (mode) {
+    case BREATHING:
+      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(100 * 2.55 * ((warningOn = !warningOn) ? 0.8 : 0.4)), changeTime || duration);
+      break;
+    case PREVIEWING:
+      lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], changeTime || PREVIEW_CHANGE_TIME, true);
+      break;
+    case IDLE:
+      lamp->hsbTo(msg[HUE1], msg[SAT1], 0, changeTime || PREVIEW_CHANGE_TIME, true);
+      break;
     }
-    
-    //lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], PREVIEW_CHANGE_TIME, true);
   }
 
   update();
@@ -59,12 +77,12 @@ void loop() {
 
 boolean read() {
   while (Serial.available()) {
-    
+
     for (int i = 0; i < MESSAGE_LENGTH; i++) {
       msg[i] = Serial.parseInt();
       Serial.read();
     }
-    
+
     //Serial.read();
     //msg[PHUE] = msg[PSAT] = msg[PBRI] = 255;
     return true;
@@ -79,3 +97,5 @@ void update() {
   analogWrite(lamp->getChannelGreen(), lamp->getGreen());
   analogWrite(lamp->getChannelBlue(), lamp->getBlue());
 }
+
+

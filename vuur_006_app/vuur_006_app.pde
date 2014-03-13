@@ -33,12 +33,16 @@ final int TAP_TIMEOUT = 2000;
 // During a long press, how long to wait before the action is applied
 final int APPLY_TIMEOUT = 3000;
 
+final int MESSAGE_INTERVAL = 100;
+
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 // Where to store the sensor calibration
 final String CALIBRATION_FILE = "calibration.dump";
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
+
+long paramsLastSent = 0;
 
 import processing.serial.*;
 import ili.lithne.*;
@@ -129,7 +133,7 @@ class VuurMessage {
     String message = toString();
     lithneSerial.write(message);
     sent += 1;
-    log("message", message);
+    // TODO log("message", message);
   }
 }
 VuurMessage message = new VuurMessage();
@@ -358,28 +362,35 @@ void update() {
       parameterArray[1] = char(message.hue1);
       parameterArray[3] = char(message.sat1);
       parameterArray[5] = char(message.bri1);
-      
+
       parameterArray[2] = char(message.hue2);
       parameterArray[4] = char(message.sat2);
       parameterArray[6] = char(message.bri2);
 
       parameterArray[36] = char(int(map(message.width, 0, 255, 110, 255)));
-      
+
       parameterArray[0] = parameterArray[9] = char(message.alternate + 1);
 
-      sendParamArray();
+      /* TODO
+       Message msg  =  new Message();
+       msg.setFunction("setCCTParameters");
+       msg.setScope("Breakout404");
+       msg.toXBeeAddress64( nm.getXBeeAddress64("CCT Ceiling Tiles") );
+       for (int i = 0; i < 5; i++) {
+       msg.addArgument(i);
+       msg.addArgument(1);
+       msg.addArgument((message.ceiling == 1) ? 255 : 10);
+       msg.addArgument((message.ceiling == 1) ? 50 : 200);
+       }
+       lithne.send(msg);
+       */
+    }
+  }
 
-      Message msg  =  new Message();
-      msg.setFunction("setCCTParameters");
-      msg.setScope("Breakout404");
-      msg.toXBeeAddress64( nm.getXBeeAddress64("CCT Ceiling Tiles") );
-      for (int i = 0; i < 5; i++) {
-        msg.addArgument(i);
-        msg.addArgument(1);
-        msg.addArgument((message.ceiling == 1) ? 255 : 10);
-        msg.addArgument((message.ceiling == 1) ? 50 : 200);
-      }
-      lithne.send(msg);
+  if (state == State.RUNNING && message.on == 1 && message.update == true) {
+    if (millis() - paramsLastSent > MESSAGE_INTERVAL) {
+      sendParamArray();
+      paramsLastSent = millis();
     }
   }
 }
@@ -399,6 +410,15 @@ void updateSensed() {
   else if (sense_amount > 0 && millis() - sense_amount_time > 300) {
     sense_amount -= 1;
   }
+}
+
+String charArrayToString(char[] arr) {
+  StringBuffer result = new StringBuffer();
+  for (int i = 0; i < arr.length; i++) {
+    result.append( int(arr[i]) );
+    result.append('\t');
+  }
+  return result.toString();
 }
 
 String arrayToString(int[] arr) {
@@ -434,7 +454,7 @@ void updateActivated() {
   }
 
   if (previous_activated_points == null || !intListsEqual(previous_activated_points, ap)) {
-    log("activated", intListToString(ap));
+    // TODO log("activated", intListToString(ap));
   }
 
   if (touching() && millis() - touch_start_time > APPLY_TIMEOUT) {
@@ -537,6 +557,10 @@ void on_touch() {
     message.phue = round(hue(c));
     message.psat = round(saturation(c));
     message.pbri = round(brightness(c));
+    println();
+    println(message.phue);
+    println(message.psat);
+    println(message.pbri);
     message.breathe = 0;
     message.sendToLithne();
     message.update = true;
@@ -835,7 +859,11 @@ float[] position(int i) {
 }
 
 color center_color() {
-  int[] hsb = xyToHSB(center[0] / 4.0, center[1] / 4.0);
+  println("x: " + (center[0] / 4.0) + ", y: " + (center[1] / 4.0));
+  int[] hsb = xyToHSB(
+    map(center[0], 0.5, 3.5, 0.0, 1.0),
+    map(center[1], 0.5, 3.5, 0.0, 1.0)
+   );
   return color(hsb[0], hsb[1], hsb[2]);
 }
 
@@ -916,7 +944,7 @@ int[] xyToHSB(float x, float y) // Range 0-1
   float dx = abs(x - 0.5);
   float dy = abs(y - 0.5);
   float d = sqrt( pow(dx, 2)+pow(dy, 2)  );
-  d = constrain(d, 0, 0.5); // d may go up to 0.7 or so, so we take the horizontal max dist as max.
+  d = constrain(d, 0, 0.7); // d may go up to 0.7 or so, so we take the horizontal max dist as max.
   // If we wish to start desaturation not from the edge, but further inwards, this value may be reduced; for instance to 3 or 2
   float sat = map(d, 0, 0.5, 0, 255); // map distance to centre to the saturation
   hsb[1] = int(sat); // Saturation: 
@@ -960,6 +988,8 @@ void setLightParameters( char paramArray[] )
 
   //println("SENDING NEW MSG: " + msg.toString());
   lithne.send( msg );
+
+  log("parameters", charArrayToString(paramArray));
 }
 
 void setUserLocation( int x, int y )
