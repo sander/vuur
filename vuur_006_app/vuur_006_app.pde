@@ -195,9 +195,9 @@ char parameterArray[] = {
 
   // Peripheral Indirect
   2, // 2 colors
-  127, // col 1: blue
+  0, // col 1: blue
   0, // col 2: red
-  255, // sat 1: full
+  0, // sat 1: full
   0, // sat 2: full
   0, // bright 1: full
   0, // bright 2: full
@@ -355,35 +355,17 @@ void update() {
     //receive_from_lithne();
 
     if (message.update) {      
-      // TODO set parameter array 
       parameterArray[1] = char(message.hue1);
       parameterArray[3] = char(message.sat1);
       parameterArray[5] = char(message.bri1);
+      
+      parameterArray[2] = char(message.hue2);
+      parameterArray[4] = char(message.sat2);
+      parameterArray[6] = char(message.bri2);
 
-
-      /*
-       float center = 8.0 * (float)msg[CENTER] / 255.0;
-       float width = 8.0 * (float)msg[WIDTH] / 255.0;
-       while (ColorCove *cove = Breakout404.nextColorCove()) {
-       int id = cove->id;
-       boolean first = !msg[ALTERNATE] || (id % 2);
-       float distance = max(1.0 - abs( ((id < 8) ? center : 8 - center) - (float)(id % 8) ) / width, 0);
-       cove->hue = msg[first ? HUE1 : HUE2];
-       cove->saturation = msg[first ? SAT1 : SAT2];
-       cove->brightness = (int)((float)msg[first ? BRI1 : BRI2] * distance);
-       
-       if (msg[ANIMATE]) {
-       int time = random(50, 200);
-       cove->hue2 = cove->hue;
-       cove->saturation2 = cove->saturation;
-       cove->brightness2 = 40;
-       cove->time = time;
-       cove->time2 = time;
-       } else {
-       cove->time = cove->time2 = 0;
-       }
-       }
-       */
+      parameterArray[36] = char(int(map(message.width, 0, 255, 110, 255)));
+      
+      parameterArray[0] = parameterArray[9] = char(message.alternate + 1);
 
       sendParamArray();
 
