@@ -9,20 +9,11 @@ boolean complete = false;
 
 boolean on = false;
 
-const int MESSAGE_LENGTH = 18;
+const int MESSAGE_LENGTH = 7;
 enum MessageKey {
-  ON,
   HUE1, SAT1, BRI1,
-  HUE2, SAT2, BRI2,
   PHUE, PSAT, PBRI,
-  ALTERNATE,
-  ANIMATE,
-  CENTER,
-  VARY,
-  WIDTH,
-  BREATHE,
-  BLINK,
-  CEILING
+  BREATHE
 };
 int msg[MESSAGE_LENGTH];
 
