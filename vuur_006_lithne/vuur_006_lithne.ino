@@ -27,7 +27,7 @@ enum MessageKey {
 int msg[MESSAGE_LENGTH];
 
 const unsigned long SWITCH_TIME = 50;
-const unsigned long PREVIEW_CHANGE_TIME = 100;
+const unsigned long PREVIEW_CHANGE_TIME = 300;
 const unsigned long BREATHE_TIME = 2000;
 boolean warningOn = true;
 

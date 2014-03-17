@@ -1,13 +1,15 @@
 // Configuration
 
 // Screen size and layout (x, y, width, height)
-final int WIDTH = 1440;
-final int HEIGHT = 900;
+final int WIDTH = 800;//1440;
+final int HEIGHT = 600;//900;
 final int[] SENSOR_DISPLAY = {
-  10, 10, 580, 580
+  10, 10, 400, 400
+  //10, 10, 580, 580
 };
 final int[] MESSAGE_DISPLAY = {
-  10, 600, 1420, 200
+  //10, 600, 1420, 200
+  10, 420, 780, 170
 };
 
 // Time intervals are in milliseconds
@@ -106,12 +108,12 @@ class VuurMessage {
 
   int[] toArray() {
     int[] array = {
-      on, 
-      hue1, sat1, bri1, 
-      hue2, sat2, bri2, 
-      phue, psat, pbri, 
-      alternate, animate, 
-      center, vary, width, 
+      on,
+      hue1, sat1, bri1,
+      hue2, sat2, bri2,
+      phue, psat, pbri,
+      alternate, animate,
+      center, vary, width,
       breathe, blink, ceiling
     };
     return array;
@@ -358,7 +360,7 @@ void update() {
     // TODO comment out for actual running; this slows things down.
     //receive_from_lithne();
 
-    if (message.update) {      
+    if (message.update) {
       parameterArray[1] = char(message.hue1);
       parameterArray[3] = char(message.sat1);
       parameterArray[5] = char(message.bri1);
@@ -751,7 +753,7 @@ void draw_message() {
   fill(40);
   rect(0, 0, MESSAGE_DISPLAY[2], MESSAGE_DISPLAY[3]);
 
-  int width = (MESSAGE_DISPLAY[2] - 20) / 18;
+  int width = (MESSAGE_DISPLAY[2] - 20) / 15;
 
   noStroke();
   fill(message.hue1, message.sat1, message.bri1);
@@ -766,14 +768,14 @@ void draw_message() {
   textFont(font);
   fill(255);
   text("on\n" + Integer.toString(message.on), 10 + 0.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("alternate\n" + Integer.toString(message.alternate), 10 + 9.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("animate\n" + Integer.toString(message.animate), 10 + 10.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("center\n" + Integer.toString(message.center), 10 + 11.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("vary\n" + Integer.toString(message.vary), 10 + 12.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("width\n" + Integer.toString(message.width), 10 + 13.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("breathe\n" + Integer.toString(message.breathe), 10 + 14.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("blink\n" + Integer.toString(message.blink), 10 + 15.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("ceiling\n" + Integer.toString(message.ceiling), 10 + 16.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("alt\n" + Integer.toString(message.alternate), 10 + 7.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("anim\n" + Integer.toString(message.animate), 10 + 8.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("center\n" + Integer.toString(message.center), 10 + 9.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("vary\n" + Integer.toString(message.vary), 10 + 10.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("width\n" + Integer.toString(message.width), 10 + 11.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("breathe\n" + Integer.toString(message.breathe), 10 + 12.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("blink\n" + Integer.toString(message.blink), 10 + 13.5 * width, MESSAGE_DISPLAY[3] / 2);
+  text("ceiling\n" + Integer.toString(message.ceiling), 10 + 14.5 * width, MESSAGE_DISPLAY[3] / 2);
   popMatrix();
 }
 
@@ -947,7 +949,7 @@ int[] xyToHSB(float x, float y) // Range 0-1
   d = constrain(d, 0, 0.5); // d may go up to 0.7 or so, so we take the horizontal max dist as max.
   // If we wish to start desaturation not from the edge, but further inwards, this value may be reduced; for instance to 3 or 2
   float sat = map(d, 0, 0.5, 0, 255); // map distance to centre to the saturation
-  hsb[1] = int(sat); // Saturation: 
+  hsb[1] = int(sat); // Saturation:
   //println("Calculated d:" + d + ", and based Saturation on that: " + sat);
   // Now calculate the color
   // This is based on the angular position of the XY in relation to the centre
@@ -956,7 +958,7 @@ int[] xyToHSB(float x, float y) // Range 0-1
 
   float heading = vect.heading();
   float ang = degrees(heading);
-  if ( ang < 0 ) { 
+  if ( ang < 0 ) {
     ang += 360;
   }
   float hue = map(ang, 0, 360, 0, 255);
@@ -979,7 +981,7 @@ void setLightParameters( char paramArray[] )
   Message msg  =  new Message();
   msg.toXBeeAddress64( nm.getXBeeAddress64("Color Coves") );
   msg.setFunction( "sizedParameters" );
-  msg.setScope( "Breakout404" );  
+  msg.setScope( "Breakout404" );
 
   for (int i = 0; i < paramArray.length; i++)
   {
@@ -997,7 +999,7 @@ void setUserLocation( int x, int y )
   Message msg  =  new Message();
   msg.toXBeeAddress64( nm.getXBeeAddress64("Color Coves") );
   msg.setFunction( "setUserLocation" );
-  msg.setScope( "Breakout404" );  
+  msg.setScope( "Breakout404" );
 
   msg.addArgument(x);
   msg.addArgument(y);
@@ -1006,4 +1008,3 @@ void setUserLocation( int x, int y )
   //println("SENDING NEW MSG: " + msg.toString());
   lithne.send( msg );
 }
-
