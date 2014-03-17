@@ -1,3 +1,8 @@
+final long REGISTER_INTERVAL = 50000;
+long lastRegistered = -REGISTER_INTERVAL;
+FunctionTable ft = new FunctionTable();
+
+
 char parameterArray[] = {
   // Local Indirect
   1, // 2 colors
@@ -50,6 +55,8 @@ void initBreakout() {
   lithne = new Lithne(this, "/dev/tty.usbmodem1413", 115200);
   lithne.enableDebug();
   lithne.begin();
+  
+  lithne.addMessageListener(ft);
 
   nm.addNode("00 13 a2 00 40 79 ce 37", "Color Coves");
   nm.addNode("00 13 a2 00 40 79 ce 25", "CCT Ceiling Tiles");
@@ -102,8 +109,31 @@ void setCeiling(boolean on) {
   for (int i = 0; i < 5; i++) {
     msg.addArgument(i);
     msg.addArgument(1);
-    msg.addArgument(!on ? 255 : 10);
-    msg.addArgument(!on ? 50 : 200);
+    msg.addArgument(!on ? 255 : 100);
+    msg.addArgument(!on ? 200 : 0);
+  }
+  lithne.send(msg);
+}
+
+void turnOff() {
+  Message msg  =  new Message();
+  msg.toXBeeAddress64( nm.getXBeeAddress64("Color Coves") );
+  msg.setFunction( "setAllHSB" );
+  msg.setScope( "Breakout404" );
+  msg.addArgument(0);
+  msg.addArgument(0);
+  msg.addArgument(0);
+  lithne.send( msg );
+  
+  msg = new Message();
+  msg.setFunction("setCCTParameters");
+  msg.setScope("Breakout404");
+  msg.toXBeeAddress64( nm.getXBeeAddress64("CCT Ceiling Tiles") );
+  for (int i = 0; i < 5; i++) {
+    msg.addArgument(i);
+    msg.addArgument(1);
+    msg.addArgument(0);
+    msg.addArgument(0);
   }
   lithne.send(msg);
 }

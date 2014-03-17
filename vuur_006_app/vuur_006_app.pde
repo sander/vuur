@@ -12,10 +12,15 @@ Serial lithneSerial;
 int max;
 float threshold;
 
+int lastCenterMove;
+
 class Pad {
   int min;
   int max;
   long lastSense;
+  long senseStart;
+  long senseStop;
+  boolean activated;
 
   // Store the last measured sensor values
   int value;
@@ -74,6 +79,7 @@ class VuurMessage {
       phue, psat, pbri, 
       breathe
     };
+    //array[5] = round(float(array[5]) * 0.5);
     return array;
   }
 
@@ -179,7 +185,7 @@ void setup() {
   resetCache();
 
   background(0);
-  
+
   String time = year() + "-" + (month() < 10 ? "0" : "") + month() + "-" + (day() < 10 ? "0" : "") + day() + " " + hour() + ":" + minute() + ":" + second();
   writer = createWriter(time + ".log.txt");
   log("time", time);
@@ -187,6 +193,16 @@ void setup() {
 
 void draw() {
   update();
+
+  if (millis() - lastRegistered > REGISTER_INTERVAL) {
+    Message msg = new Message();
+    msg.setFunction("registerSensorListener");
+    msg.setScope("Breakout404");
+    msg.toXBeeAddress64(Lithne.BROADCAST); // TODO ?
+    lithne.send(msg);
+    lastRegistered = millis();
+    log("register", "");
+  }
 
   if (read_values()) {
     switch (state) {
@@ -237,7 +253,7 @@ void update() {
   updateSensed();
   updateTouched();
   updateActivated();
-  
+
   if (reset) {
     add_points(-points);
     reset = false;
@@ -255,7 +271,7 @@ void update() {
       on_touch();
     fade_out();
 
-    int brightness = round(message.bri1 / 100.0 * points);
+    int brightness = round(float(message.bri1) / 100.0 * points);
     size = int(map(points, 0, 100, 0, 255));
 
     if (points < CEILING_THRESHOLD && previousPoints >= CEILING_THRESHOLD) {
@@ -269,6 +285,10 @@ void update() {
       parameterArray[1] = char(message.hue1);
       parameterArray[3] = char(message.sat1);
       parameterArray[5] = char(brightness);
+      
+      parameterArray[10] = parameterArray[1];
+      parameterArray[12] = parameterArray[3];
+      parameterArray[14] = parameterArray[5];
 
       parameterArray[2] = char(0);
       parameterArray[4] = char(0);
@@ -316,7 +336,7 @@ void updateActivated() {
     log("activated", intListToString(ap));
   }
 
-  if (touching() && millis() - touch_start_time > APPLY_TIMEOUT) {
+  if (touching() && millis() - touch_start_time > APPLY_TIMEOUT && message.pbri > 0) {
     message.hue1 = message.phue;
     message.sat1 = message.psat;
     message.bri1 = message.pbri;
@@ -386,9 +406,11 @@ float distance(int a, int b) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void on_activated_end() {
-  message.hue1 = message.phue;
-  message.sat1 = message.psat;
-  message.bri1 = message.pbri;
+  if (message.pbri > 0) {
+    message.hue1 = message.phue;
+    message.sat1 = message.psat;
+    message.bri1 = message.pbri;
+  }
 
   message.phue = 0;
   message.psat = 0;
@@ -538,7 +560,7 @@ void draw_sensed() {
     pushMatrix();
     translate(p / 4 * size, p % 4 * size);
     noStroke();
-    fill(255);
+    fill(150);
     rect(0, 0, size, size);
     popMatrix();
   }
@@ -632,8 +654,8 @@ void draw_message() {
   text("on\n" + Boolean.toString(on), 10 + 0.5 * width, MESSAGE_DISPLAY[3] / 2);
   /*
   text("center\n" + Integer.toString(message.center), 10 + 9.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("vary\n" + Integer.toString(message.vary), 10 + 10.5 * width, MESSAGE_DISPLAY[3] / 2);
-  */
+   text("vary\n" + Integer.toString(message.vary), 10 + 10.5 * width, MESSAGE_DISPLAY[3] / 2);
+   */
   text("size\n" + Integer.toString(size), 10 + 11.5 * width, MESSAGE_DISPLAY[3] / 2);
   text("breathe\n" + Integer.toString(message.breathe), 10 + 12.5 * width, MESSAGE_DISPLAY[3] / 2);
   //text("blink\n" + Integer.toString(message.blink), 10 + 13.5 * width, MESSAGE_DISPLAY[3] / 2);
@@ -655,6 +677,15 @@ IntList sensed_points() {
           if (value >= threshold) {
             points.append(i);
             pads[i].lastSense = millis();
+            if (pads[i].senseStart == 0)
+              pads[i].senseStart = millis();
+            //pads[i].senseStop = millis();
+          } 
+          else {
+            if (pads[i].senseStart != 0) {
+              pads[i].senseStart = 0;
+              pads[i].senseStop = millis();
+            }
           }
         }
       }
@@ -696,20 +727,40 @@ IntList activated_points() {
 
   IntList points = new IntList();
   IntList sensed = sensed_points();
+
   for (int i = 0; i < 16; i++)
-    if (millis() - pads[i].lastSense < TOUCH_TIMEOUT)
+    if ((pads[i].activated && millis() - pads[i].lastSense < TOUCH_TIMEOUT) || // actief en te kort geleden voor timeout, hou actief
+    (pads[i].senseStart != 0 && millis() - pads[i].senseStart > TOUCH_TIMEOUT)) { // voldoende lang geleden begonnen met sensen
       points.append(i);
-  float f = 1.0 / points.size();
-  center = new float[2];
-  center[0] = center[1] = 0.0;
-  for (int i = 0; i < points.size(); i++) {
-    float[] pos = position(points.get(i));
-    center[0] += f * pos[0];
-    center[1] += f * pos[1];
+      pads[i].activated = true;
+    } 
+    else {
+      pads[i].activated = false;
+    }
+
+  if (points.size() > 0) {
+    float f = 1.0 / points.size();
+    center = new float[2];
+    center[0] = center[1] = 0.0;
+    for (int i = 0; i < points.size(); i++) {
+      float[] pos = position(points.get(i));
+      center[0] += f * pos[0];
+      center[1] += f * pos[1];
+    }
+    if (lastCenterMove != 0 && !(previous_center[0] == center[0] && previous_center[1] == center[1])) {
+      //float g = min(1.0, float(millis() - lastCenterMove) / float(VELOCITY));
+      float g = sqrt(sq(center[0] - previous_center[0]) + sq(center[1] - previous_center[1]));
+      if (g > 0) g = 1.0 / g;
+      g = g * VELOCITY; 
+      println(g);
+      center[0] = previous_center[0] + g * (center[0] - previous_center[0]);
+      center[1] = previous_center[1] + g * (center[1] - previous_center[1]);
+    }
+    lastCenterMove = millis();
+    previous_center = center;
+    //if (center[0] == 0.0 && center[1] == 0.0)
+    //  center = null;
   }
-  previous_center = center;
-  if (center[0] == 0.0 && center[1] == 0.0)
-    center = null;
   return cached_activated_points = points;
 }
 

@@ -54,10 +54,10 @@ void keyPressed() {
     cached_mode = null;
     background(0);
     break;
-  case 'q':
-    writer.flush();
-    writer.close();
-    exit();
+  case 'u':
+    turnOff();
+    on = false;
+    message.update = true;
     break;
   }
 }

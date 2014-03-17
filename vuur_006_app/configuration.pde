@@ -41,3 +41,6 @@ final int MESSAGE_INTERVAL = 100;
 final String CALIBRATION_FILE = "calibration.dump";
 
 final int CEILING_THRESHOLD = 20;
+
+// How many milliseconds does it take to go from the top left to the top right?
+final float VELOCITY = 0.01;

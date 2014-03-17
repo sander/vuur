@@ -54,11 +54,11 @@ void loop() {
     switch (mode) {
     case BREATHING:
       time = (changeTime) ? changeTime : duration;
-      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(100 * 2.55 * ((warningOn = !warningOn) ? 0.8 : 0.2)), time, true);
+      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(100 * 2.55 * ((warningOn = !warningOn) ? 0.4 : 0.2)), time, true);
       break;
     case PREVIEWING:
       time = (changeTime) ? changeTime : PREVIEW_CHANGE_TIME;
-      lamp->hsbTo(msg[PHUE], msg[PSAT], msg[PBRI], time, true);
+      lamp->hsbTo(msg[PHUE], msg[PSAT], (int)(0.5 * (float)msg[PBRI]), time, true);
       break;
     case IDLE:
       time = (changeTime) ? changeTime : PREVIEW_CHANGE_TIME;
