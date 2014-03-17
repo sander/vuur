@@ -93,7 +93,7 @@ class VuurMessage {
     String message = toString();
     lithneSerial.write(message);
     sent += 1;
-    // TODO log("message", message);
+    log("message", message);
   }
 }
 VuurMessage message = new VuurMessage();
@@ -145,6 +145,8 @@ int[] values = new int[16];
 
 boolean hasRun = false;
 
+PrintWriter writer;
+
 void setup() {
   size(WIDTH, HEIGHT);
 
@@ -177,8 +179,10 @@ void setup() {
   resetCache();
 
   background(0);
-
-  log("time", millis());
+  
+  String time = year() + "-" + (month() < 10 ? "0" : "") + month() + "-" + (day() < 10 ? "0" : "") + day() + " " + hour() + ":" + minute() + ":" + second();
+  writer = createWriter(time + ".log.txt");
+  log("time", time);
 }
 
 void draw() {
@@ -206,12 +210,9 @@ void draw() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void log(String key, String value) {
-  print("LOG");
-  print(millis());
-  print(": ");
-  print(key);
-  print(": ");
-  println(value);
+  String line = millis() + ": " + key + ": " + value;
+  writer.println(line);
+  println(line);
 }
 
 void log(String key, int value) {
@@ -226,15 +227,21 @@ void resetCache() {
   cached_activated_points = null;
 }
 
+boolean reset = false;
+
 void update() {
   int previousPoints = points;
 
   resetCache();
-  message.update = false;
 
   updateSensed();
   updateTouched();
   updateActivated();
+  
+  if (reset) {
+    add_points(-points);
+    reset = false;
+  }
 
   if (on && !hasRun) {
     setUserLocation(250, 480);
@@ -248,8 +255,8 @@ void update() {
       on_touch();
     fade_out();
 
-    // TODO set width etc.
-    message.bri1 = round(255.0 / 100.0 * points);
+    int brightness = round(message.bri1 / 100.0 * points);
+    size = int(map(points, 0, 100, 0, 255));
 
     if (points < CEILING_THRESHOLD && previousPoints >= CEILING_THRESHOLD) {
       setCeiling(false);
@@ -261,13 +268,13 @@ void update() {
     if (message.update) {
       parameterArray[1] = char(message.hue1);
       parameterArray[3] = char(message.sat1);
-      parameterArray[5] = char(message.bri1);
+      parameterArray[5] = char(brightness);
 
       parameterArray[2] = char(0);
       parameterArray[4] = char(0);
       parameterArray[6] = char(0);
 
-      parameterArray[36] = char(int(map(size, 0, 255, 110, 255)));
+      parameterArray[36] = char(int(map(size, 0, 255, 100, 255)));
 
       parameterArray[0] = parameterArray[9] = 1;
     }
@@ -276,6 +283,7 @@ void update() {
   if (state == State.RUNNING && on && message.update == true) {
     if (millis() - paramsLastSent > MESSAGE_INTERVAL) {
       sendParamArray();
+      message.update = false;
       paramsLastSent = millis();
     }
   }
@@ -305,7 +313,7 @@ void updateActivated() {
   }
 
   if (previous_activated_points == null || !intListsEqual(previous_activated_points, ap)) {
-    // TODO log("activated", intListToString(ap));
+    log("activated", intListToString(ap));
   }
 
   if (touching() && millis() - touch_start_time > APPLY_TIMEOUT) {
@@ -394,9 +402,10 @@ void on_activated_end() {
   // TODO Is this ok?
   //@message[:alternate] = if @last_touch_durations.length == TAP_AMOUNT and millis - @last_touch_durations[-1][1] < TAP_TIMEOUT then 1 else 0 end
 
-  int default_width = 30;
-  float max_activated = 3.0;
-  size = default_width + int(previous_activated_points.size() / max_activated * (255.0 - default_width));
+  //int default_width = 30;
+  //float max_activated = 3.0;
+  //size = default_width + int(previous_activated_points.size() / max_activated * (255.0 - default_width));
+  //size = int(255.0 * (float(points) / 255.0)); 
 
   message.update = true;
 }
@@ -411,10 +420,6 @@ void on_touch() {
     message.phue = round(hue(c));
     message.psat = round(saturation(c));
     message.pbri = round(brightness(c));
-    println();
-    println(message.phue);
-    println(message.psat);
-    println(message.pbri);
     message.breathe = 0;
     message.sendToLithne();
     message.update = true;
@@ -718,7 +723,6 @@ float[] position(int i) {
 }
 
 color center_color() {
-  println("x: " + (center[0] / 4.0) + ", y: " + (center[1] / 4.0));
   int[] hsb = xyToHSB(
   map(center[0], 0.5, 3.5, 0.0, 1.0), 
   map(center[1], 0.5, 3.5, 0.0, 1.0)

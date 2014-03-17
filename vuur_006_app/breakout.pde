@@ -102,8 +102,8 @@ void setCeiling(boolean on) {
   for (int i = 0; i < 5; i++) {
     msg.addArgument(i);
     msg.addArgument(1);
-    msg.addArgument(on ? 255 : 10);
-    msg.addArgument(on ? 50 : 200);
+    msg.addArgument(!on ? 255 : 10);
+    msg.addArgument(!on ? 50 : 200);
   }
   lithne.send(msg);
 }

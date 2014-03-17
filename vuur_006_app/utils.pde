@@ -19,7 +19,7 @@ String intListToString(IntList arr) {
   StringBuffer result = new StringBuffer();
   for (int i = 0; i < arr.size(); i++) {
     result.append(arr.get(i));
-    result.append('\n');
+    result.append(' ');
   }
   return result.toString();
 }

@@ -32,14 +32,10 @@ void keyPressed() {
     break;
   case 'o':
     on = !on;
+    message.update = true;
     break;
-    /* TODO
-     when 'm'
-     puts 'min: ' + @min.inspect
-     puts 'max: ' + @max.inspect
-     */
   case 'r':
-    add_points(-points);
+    reset = true;
     break;
   case '1':
   case '2':
@@ -57,6 +53,11 @@ void keyPressed() {
     cached_status = null;
     cached_mode = null;
     background(0);
+    break;
+  case 'q':
+    writer.flush();
+    writer.close();
+    exit();
     break;
   }
 }
