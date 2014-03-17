@@ -50,17 +50,15 @@ void loop() {
   read();
 
   int newMode = IDLE;
-  if (msg[BREATHE]) // && !msg[CEILING])
+  if (msg[BREATHE] != 0)
     newMode = BREATHING;
-  else if (msg[PBRI])
+  else if (msg[PBRI] != 0)
     newMode = PREVIEWING;
     
   int changeTime = (newMode != mode) ? SWITCH_TIME : 0;
-  //changeTime = 0;
   mode = newMode;
   if (changeTime != 0 || !lamp->isAnimating()) {
     int duration = (int)((1 - (float)msg[BREATHE] / 100.0) * (float)BREATHE_TIME);
-    //duration = 1000;
     int time;
     switch (mode) {
     case BREATHING:
@@ -83,14 +81,10 @@ void loop() {
 
 boolean read() {
   while (Serial.available()) {
-
     for (int i = 0; i < MESSAGE_LENGTH; i++) {
       msg[i] = Serial.parseInt();
       Serial.read();
     }
-
-    //Serial.read();
-    //msg[PHUE] = msg[PSAT] = msg[PBRI] = 255;
     return true;
   }
   return false;

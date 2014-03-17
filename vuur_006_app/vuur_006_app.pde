@@ -536,7 +536,10 @@ void on_activated_end() {
   message.phue = 0;
   message.psat = 0;
   message.pbri = 0;
-  message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
+  if (points > 20)
+    message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
+  else
+    message.breathe = 0;
   message.sendToLithne();
 
   // TODO Is this ok?
@@ -570,17 +573,24 @@ void on_touch() {
 }
 
 void fade_out() {
-  if (millis() - points_changed > FADE_INTERVAL && points > 0)
+  if (millis() - points_changed > FADE_INTERVAL && points > 0) {
     add_points(-1);
+    message.sendToLithne();
+  }
 }
 
 void add_points(int pts) {
   points += pts;
   points_changed = millis();
-  if (message.pbri == 0)
-    message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
+  if (message.pbri == 0) {
+    if (points > 20)
+      message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
+    else
+      message.breathe = 0;
+  }
   if (points == 0)
     message.breathe = 0;
+  message.sendToLithne();
   message.update = true;
 }
 
@@ -912,7 +922,7 @@ void keyPressed() {
      puts 'max: ' + @max.inspect
      */
   case 'r':
-    points = 0;
+    add_points(-points);
     break;
   case '1':
   case '2':
