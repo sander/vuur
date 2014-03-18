@@ -6,6 +6,7 @@ class Point {
   float px;
   float py;
   int lastMove;
+  boolean updated;
 
   void moveTo(IntList points) {
     float f = 1.0 / points.size();
@@ -25,6 +26,7 @@ class Point {
     lastMove = millis();
     px = x;
     py = y;
+    updated = true;
   }
 
   float[] toFloatArray() {
@@ -45,6 +47,10 @@ class Point {
   color getColor() {
     int[] hsb = xyToHSB(map(x, 0.5, 3.5, 0.0, 1.0), map(y, 0.5, 3.5, 0.0, 1.0));
     return color(hsb[0], hsb[1], hsb[2]);
+  }
+  
+  boolean equals(Point p) {
+    return x == p.x && y == p.y;
   }
 }
 

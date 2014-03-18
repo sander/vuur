@@ -1,7 +1,8 @@
-long paramsLastSent = 0;
-
 import processing.serial.*;
 import ili.lithne.*;
+
+long paramsLastSent = 0;
+long lithneLastSent = 0;
 
 Lithne lithne;
 final NodeManager nm = new NodeManager();
@@ -55,13 +56,15 @@ class VuurMessage {
   int psat = 0;
   int pbri = 0;
   int breathe = 0;     // Preview breathe duration between 0 (0 s) and 100 (2 s)
+  
+  boolean isSent = false;
 
   boolean update = true;
 
   int[] toArray() {
     int[] array = {
       hue1, sat1, bri1, 
-      phue, psat, pbri,
+      phue, psat, pbri, 
       breathe
     };
     //array[5] = round(float(array[5]) * 0.5);
@@ -81,10 +84,15 @@ class VuurMessage {
   }
 
   void sendToLithne() {
+    isSent = false;
+  }
+  
+  void actuallySendToLithne() {
     String message = toString();
     lithneSerial.write(message);
     sent += 1;
-    log("message", message);
+    //log("message", message);
+    isSent = true;
   }
 }
 VuurMessage message = new VuurMessage();
@@ -96,9 +104,11 @@ byte points = 0;
 boolean drawing = true;
 
 // Which point coordinates is the preview based on
+/*
 float[] preview = {
-  -1.0, -1.0
-};
+ -1.0, -1.0
+ };
+ */
 
 // Amount of messages sent
 int sent = 0;
@@ -129,7 +139,8 @@ IntList cached_touch_points = null;
 IntList cached_activated_points = null;
 IntList previous_activated_points = null;
 
-Point center = null;
+Point center;
+Point preview;
 
 int[] values = new int[16];
 
@@ -171,10 +182,14 @@ void setup() {
   resetCache();
 
   background(0);
-  
+
   center = new Point();
   center.indicatorColor = 255;
   center.velocity = VELOCITY;
+  
+  preview = new Point();
+  preview.indicatorColor = 0;
+  preview.velocity = PREVIEW_VELOCITY;
 
   timeString = "" + (System.currentTimeMillis() / 1000);
 
@@ -365,6 +380,11 @@ void update() {
       paramsLastSent = millis();
     }
   }
+  
+  if (message.isSent == false && millis() - lithneLastSent > LITHNE_MESSAGE_INTERVAL) {
+    message.actuallySendToLithne();
+    lithneLastSent = millis();
+  }
 }
 
 void updateSensed() {
@@ -493,16 +513,22 @@ void on_activated_end() {
 void on_touch() {
   if (millis() - points_changed > ADD_POINT_INTERVAL && points < 100)
     add_points(1);
-  float[] point = center.toFloatArray();
-  if (point != null && point != preview) {
-    preview = point;
-    color c = center.getColor();
+  if (preview.updated) {
+    color c = preview.getColor();
     message.phue = round(hue(c));
     message.psat = round(saturation(c));
     message.pbri = round(brightness(c));
     message.breathe = 0;
     message.sendToLithne();
+    preview.updated = false;
+  }
+  if (center.updated) {
+    color c2 = center.getColor();
+    message.hue1 = round(hue(c2));
+    message.sat1 = round(saturation(c2));
+    message.bri1 = round(brightness(c2));
     message.update = true;
+    center.updated = false;
   }
 }
 
@@ -638,6 +664,7 @@ void draw_activated() {
     noFill();
     ellipse((p / 4 + 0.5) * size, (p % 4 + 0.5) * size, 20, 20);
   }
+  preview.draw(size);
   center.draw(size);
   popMatrix();
 }
@@ -791,6 +818,7 @@ IntList activated_points() {
     }
 
   if (points.size() > 0) {
+    preview.moveTo(points);
     center.moveTo(points);
   }
   return cached_activated_points = points;

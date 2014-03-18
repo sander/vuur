@@ -44,3 +44,7 @@ final int CEILING_THRESHOLD = 20;
 
 // How many milliseconds does it take to go from the top left to the top right?
 final float VELOCITY = 0.01;
+
+final float PREVIEW_VELOCITY = 0.08;
+
+final int LITHNE_MESSAGE_INTERVAL = 20;
