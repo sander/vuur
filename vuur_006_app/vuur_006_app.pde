@@ -46,21 +46,6 @@ boolean on = false;
 
 int size = 100;
 
-/*
-
- int alternate = 0;   // Show alternating secondary effect color? 1 or 0
- int animate = 0;     // Instead of using the secondary color,
- // animate and animate with the dimmed main color
- int center = 200;    // Center of light effect in room, 0-255 mapped to 0.0-8.0
- int vary = 0;        // Ignored
- int width = 100;     // Width of light effect, 0-255 mapped to 0.0-8.0
- 
- 
- 
- int blink = 0;       // Ignored
- int ceiling = 1;     // Enable main ceiling light? 1 or 0
- */
-
 // Message, the values of which are sent to Lithne on send_to_lithne
 class VuurMessage {
   int hue1 = 222;      // Main effect color
@@ -144,8 +129,7 @@ IntList cached_touch_points = null;
 IntList cached_activated_points = null;
 IntList previous_activated_points = null;
 
-float[] center = null;
-float[] previous_center = null;
+Point center = null;
 
 int[] values = new int[16];
 
@@ -187,6 +171,10 @@ void setup() {
   resetCache();
 
   background(0);
+  
+  center = new Point();
+  center.indicatorColor = 255;
+  center.velocity = VELOCITY;
 
   timeString = "" + (System.currentTimeMillis() / 1000);
 
@@ -505,10 +493,10 @@ void on_activated_end() {
 void on_touch() {
   if (millis() - points_changed > ADD_POINT_INTERVAL && points < 100)
     add_points(1);
-  float[] point = center;
+  float[] point = center.toFloatArray();
   if (point != null && point != preview) {
     preview = point;
-    color c = center_color();
+    color c = center.getColor();
     message.phue = round(hue(c));
     message.psat = round(saturation(c));
     message.pbri = round(brightness(c));
@@ -650,13 +638,7 @@ void draw_activated() {
     noFill();
     ellipse((p / 4 + 0.5) * size, (p % 4 + 0.5) * size, 20, 20);
   }
-  if (center != null) {
-    ellipseMode(CENTER);
-    fill(center_color());
-    stroke(0);
-    strokeWeight(5);
-    ellipse(center[0] * size, center[1] * size, 20, 20);
-  }
+  center.draw(size);
   popMatrix();
 }
 
@@ -809,27 +791,7 @@ IntList activated_points() {
     }
 
   if (points.size() > 0) {
-    float f = 1.0 / points.size();
-    center = new float[2];
-    center[0] = center[1] = 0.0;
-    for (int i = 0; i < points.size(); i++) {
-      float[] pos = position(points.get(i));
-      center[0] += f * pos[0];
-      center[1] += f * pos[1];
-    }
-    if (lastCenterMove != 0 && !(previous_center[0] == center[0] && previous_center[1] == center[1])) {
-      //float g = min(1.0, float(millis() - lastCenterMove) / float(VELOCITY));
-      float g = sqrt(sq(center[0] - previous_center[0]) + sq(center[1] - previous_center[1]));
-      if (g > 0) g = 1.0 / g;
-      g = g * VELOCITY; 
-      //println(g);
-      center[0] = previous_center[0] + g * (center[0] - previous_center[0]);
-      center[1] = previous_center[1] + g * (center[1] - previous_center[1]);
-    }
-    lastCenterMove = millis();
-    previous_center = center;
-    //if (center[0] == 0.0 && center[1] == 0.0)
-    //  center = null;
+    center.moveTo(points);
   }
   return cached_activated_points = points;
 }
@@ -841,13 +803,5 @@ float[] position(int i) {
     (i / 4) + 0.5, (i % 4) + 0.5
   };
   return result;
-}
-
-color center_color() {
-  int[] hsb = xyToHSB(
-  map(center[0], 0.5, 3.5, 0.0, 1.0), 
-  map(center[1], 0.5, 3.5, 0.0, 1.0)
-    );
-  return color(hsb[0], hsb[1], hsb[2]);
 }
 
