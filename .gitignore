@@ -3,3 +3,4 @@
 calibration.dump
 *.log.txt
 *.asf
+data/

@@ -7,6 +7,10 @@
 *  listeners. So, all you have to do, is also implement this function in your class. The class below provides an example
 *  of this. If you understand the basics of this, you can make very object (class) listen to specific messages.
 **/
+
+int loudness;
+int motion;
+
 public class FunctionTable implements MessageListener
 {
   /**
@@ -40,9 +44,11 @@ public class FunctionTable implements MessageListener
     *  to receive, and then call specific functions in your own code. (read further below)
     **/
     if (event.getMessage().functionIs("motion")) {
-      log("motion", event.getMessage().getArgument(0));
+      motion = event.getMessage().getArgument(0);
+      log("motion", motion);
     } else if (event.getMessage().functionIs("loudness")) {
-      log("loudness", event.getMessage().getArgument(0));
+      loudness = event.getMessage().getArgument(0);
+      log("loudness", loudness);
     }
     /*
     if( event.getMessage().functionIs( "ledValue" ) )

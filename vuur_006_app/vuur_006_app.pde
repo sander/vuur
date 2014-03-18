@@ -151,7 +151,9 @@ int[] values = new int[16];
 
 boolean hasRun = false;
 
+String timeString;
 PrintWriter writer;
+PrintWriter table;
 
 void setup() {
   size(WIDTH, HEIGHT);
@@ -186,9 +188,62 @@ void setup() {
 
   background(0);
 
-  String time = year() + "-" + (month() < 10 ? "0" : "") + month() + "-" + (day() < 10 ? "0" : "") + day() + " " + hour() + ":" + minute() + ":" + second();
-  writer = createWriter(time + ".log.txt");
-  log("time", time);
+  /*
+  table = new Table();
+   table.addColumn("Timestamp");
+   table.addColumn("Sending to Breakout");
+   for (int i = 0; i < 16; i++) {
+   table.addColumn("Pad " + i + " activated");
+   }
+   table.addColumn("Color hue");
+   table.addColumn("Color saturation");
+   table.addColumn("Color brightness");
+   table.addColumn("Breathe");
+   table.addColumn("Points");
+   table.addColumn("Width");
+   table.addColumn("Effect brightness");
+   table.addColumn("Ceiling");
+   table.addColumn("Loudness");
+   table.addColumn("Motion");
+   for (int i = 0; i < 37; i++) {
+   table.addColumn("sizedParameter " + i);
+   }
+   */
+
+  timeString = year() + "-" + (month() < 10 ? "0" : "") + month() + "-" + (day() < 10 ? "0" : "") + day() + "T" + (hour() < 10 ? "0" : "") + hour() + "-" + (minute() < 10 ? "0" : "") + minute();
+
+  table = createWriter("../data/table-" + timeString + ".csv");
+
+  addColumn("Timestamp");
+  addColumn("Sending to Breakout");
+  for (int i = 0; i < 16; i++) {
+    addColumn("Pad " + i + " activated");
+  }
+  addColumn("Color hue");
+  addColumn("Color saturation");
+  addColumn("Color brightness");
+  addColumn("Breathe");
+  addColumn("Points");
+  addColumn("Width");
+  addColumn("Effect brightness");
+  addColumn("Ceiling");
+  addColumn("Loudness");
+  addColumn("Motion");
+  for (int i = 0; i < 36; i++) {
+    addColumn("sizedParameter " + i);
+  }
+  addColumn("sizedParameter 36", true);
+  table.println();
+
+  writer = createWriter("../data/log-" + timeString + ".txt");
+  log("time", timeString);
+}
+
+void addColumn(String name, boolean comma) {
+  table.print('"' + name + '"' + (comma ? "," : ""));
+}
+void addColumn(String name) {
+  addColumn(name, true);
 }
 
 void draw() {
@@ -226,9 +281,55 @@ void draw() {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void log(String key, String value) {
-  String line = millis() + ": " + key + ": " + value;
+  String line = System.currentTimeMillis() + ": " + key + ": " + value;
   writer.println(line);
   println(line);
+
+  int[] values = {
+    int(System.currentTimeMillis()), int(on)
+  }; 
+  addRows(values);
+  addRows(activated_points().array());
+  int[] values2 = {
+    message.phue, message.psat, message.pbri, message.breathe, 
+    points, size, round(float(message.bri1) / 100.0 * points), 
+    int(points >= CEILING_THRESHOLD), loudness, motion
+  };
+  addRows(values2);
+  addRows(parameterArray);
+  table.println();
+  /*
+  TableRow row = table.addRow();
+   row.setInt("Timestamp", int(System.currentTimeMillis()));
+   row.setInt("Sending to Breakout", int(on));
+   for (int i = 0; i < 16; i++) {
+   row.setInt("Pad " + i + " activated", int(pads[i].activated)); 
+   }
+   row.setInt("Color hue", message.phue);
+   row.setInt("Color saturation", message.psat);
+   row.setInt("Color brightness", message.pbri);
+   row.setInt("Breathe", message.breathe);
+   row.setInt("Points", points);
+   row.setInt("Width", size);
+   row.setInt("Effect brightness", round(float(message.bri1) / 100.0 * points));
+   row.setInt("Ceiling", int(points >= CEILING_THRESHOLD));
+   row.setInt("Loudness", loudness);
+   row.setInt("Motion", motion);
+   for (int i = 0; i < 37; i++) {
+   row.setInt("sizedParameter " + i, parameterArray[i]);
+   }
+   */
+}
+
+void addRows(int[] values) {
+  for (int i = 0; i < values.length; i++) {
+    table.print(values[i] + ",");
+  }
+}
+void addRows(char[] values) {
+  for (int i = 0; i < values.length; i++) {
+    table.print(int(values[i]) + ",");
+  }
 }
 
 void log(String key, int value) {
@@ -285,7 +386,7 @@ void update() {
       parameterArray[1] = char(message.hue1);
       parameterArray[3] = char(message.sat1);
       parameterArray[5] = char(brightness);
-      
+
       parameterArray[10] = parameterArray[1];
       parameterArray[12] = parameterArray[3];
       parameterArray[14] = parameterArray[5];
@@ -752,7 +853,7 @@ IntList activated_points() {
       float g = sqrt(sq(center[0] - previous_center[0]) + sq(center[1] - previous_center[1]));
       if (g > 0) g = 1.0 / g;
       g = g * VELOCITY; 
-      println(g);
+      //println(g);
       center[0] = previous_center[0] + g * (center[0] - previous_center[0]);
       center[1] = previous_center[1] + g * (center[1] - previous_center[1]);
     }
