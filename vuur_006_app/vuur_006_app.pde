@@ -76,7 +76,7 @@ class VuurMessage {
   int[] toArray() {
     int[] array = {
       hue1, sat1, bri1, 
-      phue, psat, pbri, 
+      phue, psat, pbri,
       breathe
     };
     //array[5] = round(float(array[5]) * 0.5);
@@ -188,40 +188,23 @@ void setup() {
 
   background(0);
 
-  /*
-  table = new Table();
-   table.addColumn("Timestamp");
-   table.addColumn("Sending to Breakout");
-   for (int i = 0; i < 16; i++) {
-   table.addColumn("Pad " + i + " activated");
-   }
-   table.addColumn("Color hue");
-   table.addColumn("Color saturation");
-   table.addColumn("Color brightness");
-   table.addColumn("Breathe");
-   table.addColumn("Points");
-   table.addColumn("Width");
-   table.addColumn("Effect brightness");
-   table.addColumn("Ceiling");
-   table.addColumn("Loudness");
-   table.addColumn("Motion");
-   for (int i = 0; i < 37; i++) {
-   table.addColumn("sizedParameter " + i);
-   }
-   */
-
-  timeString = year() + "-" + (month() < 10 ? "0" : "") + month() + "-" + (day() < 10 ? "0" : "") + day() + "T" + (hour() < 10 ? "0" : "") + hour() + "-" + (minute() < 10 ? "0" : "") + minute();
+  timeString = "" + (System.currentTimeMillis() / 1000);
 
   table = createWriter("../data/table-" + timeString + ".csv");
 
+  addColumn("Log key");
   addColumn("Timestamp");
   addColumn("Sending to Breakout");
+  addColumn("Some pads activated");
   for (int i = 0; i < 16; i++) {
     addColumn("Pad " + i + " activated");
   }
   addColumn("Color hue");
   addColumn("Color saturation");
   addColumn("Color brightness");
+  addColumn("Preview hue");
+  addColumn("Preview saturation");
+  addColumn("Preview brightness");
   addColumn("Breathe");
   addColumn("Points");
   addColumn("Width");
@@ -229,10 +212,9 @@ void setup() {
   addColumn("Ceiling");
   addColumn("Loudness");
   addColumn("Motion");
-  for (int i = 0; i < 36; i++) {
+  for (int i = 0; i < 37; i++) {
     addColumn("sizedParameter " + i);
   }
-  addColumn("sizedParameter 36", true);
   table.println();
 
   writer = createWriter("../data/log-" + timeString + ".txt");
@@ -285,51 +267,37 @@ void log(String key, String value) {
   writer.println(line);
   println(line);
 
-  int[] values = {
-    int(System.currentTimeMillis()), int(on)
-  };
- // TODO veiliger met fixed size arrays 
-  addRows(values);
-  addRows(activated_points().array());
-  int[] values2 = {
-    message.phue, message.psat, message.pbri, message.breathe, 
-    points, size, round(float(message.bri1) / 100.0 * points), 
-    int(points >= CEILING_THRESHOLD), loudness, motion
-  };
-  addRows(values2);
-  addRows(parameterArray);
+  table.print("\"" + key + "\",");
+  long[] row = new long[3 + 16 + 6 + 7 + 37];
+  int n = 0;
+  row[n++] = System.currentTimeMillis();
+  row[n++] = int(on);
+  row[n++] = int(activated_points().size() > 0);
+  for (int i = 0; i < nPads; i++)
+    row[n++] = int(pads[i].activated);
+  row[n++] = message.hue1;
+  row[n++] = message.sat1;
+  row[n++] = message.bri1;
+  row[n++] = message.phue;
+  row[n++] = message.psat;
+  row[n++] = message.pbri;
+  row[n++] = message.breathe;
+  row[n++] = points;
+  row[n++] = size;
+  row[n++] = round(float(message.bri1) / 100.0 * points);
+  row[n++] = int(points < CEILING_THRESHOLD);
+  row[n++] = loudness;
+  row[n++] = motion;
+  for (int i = 0; i < 37; i++) {
+    row[n++] = parameterArray[i];
+  }
+  addRows(row);
   table.println();
-  /*
-  TableRow row = table.addRow();
-   row.setInt("Timestamp", int(System.currentTimeMillis()));
-   row.setInt("Sending to Breakout", int(on));
-   for (int i = 0; i < 16; i++) {
-   row.setInt("Pad " + i + " activated", int(pads[i].activated)); 
-   }
-   row.setInt("Color hue", message.phue);
-   row.setInt("Color saturation", message.psat);
-   row.setInt("Color brightness", message.pbri);
-   row.setInt("Breathe", message.breathe);
-   row.setInt("Points", points);
-   row.setInt("Width", size);
-   row.setInt("Effect brightness", round(float(message.bri1) / 100.0 * points));
-   row.setInt("Ceiling", int(points >= CEILING_THRESHOLD));
-   row.setInt("Loudness", loudness);
-   row.setInt("Motion", motion);
-   for (int i = 0; i < 37; i++) {
-   row.setInt("sizedParameter " + i, parameterArray[i]);
-   }
-   */
 }
 
-void addRows(int[] values) {
+void addRows(long[] values) {
   for (int i = 0; i < values.length; i++) {
     table.print(values[i] + ",");
-  }
-}
-void addRows(char[] values) {
-  for (int i = 0; i < values.length; i++) {
-    table.print(int(values[i]) + ",");
   }
 }
 
