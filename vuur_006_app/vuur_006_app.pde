@@ -287,7 +287,8 @@ void log(String key, String value) {
 
   int[] values = {
     int(System.currentTimeMillis()), int(on)
-  }; 
+  };
+ // TODO veiliger met fixed size arrays 
   addRows(values);
   addRows(activated_points().array());
   int[] values2 = {
