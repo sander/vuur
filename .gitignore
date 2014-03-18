@@ -1,3 +1,6 @@
 *.sw[o|p]
 *~
-tools/calibration.dump
+calibration.dump
+*.log.txt
+*.asf
+data/

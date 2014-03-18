@@ -65,9 +65,9 @@ void Breakout404Class::update() {
   if (millis() - lastSend > interval) {
     lastSend = millis();
 
-    //if (updateCoveHSB()) return;
+    if (updateCoveHSB()) return;
     //if (updateCoveParametrics()) return;
-    if (updateCovePingpong()) return;
+    //if (updateCovePingpong()) return;
     if (updateCeiling()) return;
     //if (updateSolime()) return;
 

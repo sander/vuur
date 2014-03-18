@@ -1,67 +1,38 @@
-# Configuration
+load_library :serial
+import 'processing.serial.Serial'
 
-# Load in full screen?
-#full_screen
+full_screen
 
-# Screen size and layout (x, y, width, height)
-WIDTH = 1440
-HEIGHT = 900
-SENSOR_DISPLAY = [10, 10, 580, 580]
-MESSAGE_DISPLAY = [10, 600, 1420, 200]
-
-# Time intervals are in milliseconds
-
-# How long to wait before marking a pad as untouched
-TOUCH_COOLDOWN = 100
-
-# How long a pad needs to sense a high value before it is considered touched
-TOUCH_TIMEOUT = 200
-
-# How long to wait before adding another point
-ADD_POINT_INTERVAL = 200
-
-# How long to wait before removing a point
-FADE_INTERVAL = 1000
-
-# How many taps are needed before activating the 'alternate' mode
-TAP_AMOUNT = 3
-
-# Time interval within which TAP_AMOUNT taps need to be done
-TAP_TIMEOUT = 2000
-
-# During a long press, how long to wait before the action is applied
-APPLY_TIMEOUT = 3000
-
-#######################################################
-
-# Which pads are next to which pads
 NEIGHBORS = {
   0 => [1, 4],        1 => [0, 2, 5],     2 => [1, 3, 6],     3 => [2, 7],
   4 => [0, 5, 8],     5 => [1, 4],        6 => [2, 7],        7 => [3, 6, 11],
   8 => [4, 9, 12],    9 => [8, 13],       10 => [11, 14],     11 => [7, 10, 15],
   12 => [8, 13],      13 => [9, 12, 14],  14 => [10, 13, 15], 15 => [11, 14]
 }
-
-# Where to store the sensor calibration
+WIDTH = 1440
+HEIGHT = 900
+SENSOR_DISPLAY = [10, 10, 580, 580]
+MESSAGE_DISPLAY = [10, 600, 1420, 200]
 CALIBRATION_FILE = 'calibration.dump'
+
+TOUCH_TIMEOUT = 100
+SWIPE_TIMEOUT = 500
+TOUCH_COOLDOWN = 100
+ADD_POINT_INTERVAL = 100
+ADD_POINT_QUICKLY_INTERVAL = 50
+FADE_INTERVAL = 200
 
 #######################################################
 
-load_library :serial
-import 'processing.serial.Serial'
-
 def setup
   size WIDTH, HEIGHT
-
+  
   load_palettes
 
-  @arduino = Serial.new self, '/dev/tty.usbmodem1421', 115200
-  @lithne = Serial.new self, '/dev/tty.usbmodem1411', 115200
+  #@arduino = Serial.new self, '/dev/tty.usbmodem1421', 115200
+  #@lithne = Serial.new self, '/dev/tty.usbmodem1411', 115200 
+  @values = [1000, 1, 0, 0, 0, 100, 0, 0, 0, 0, 100, 1000, 0, 0, 0, 0]
 
-  # Store the last measured sensor values
-  @values = []
-
-  # Initialise calibration values
   name = CALIBRATION_FILE
   if File.exist? name
     data = Marshal.load File.read name
@@ -75,46 +46,33 @@ def setup
     @threshold = 0.3
     @state = :calibrate_not_touched
   end
-
-  # Use to draw on screen
-  @font = create_font 'AvenirNext-DemiBold', 14
-
-  # Set to true once sensor data has come in
+  @logging = false
+  @font = create_font 'Karla', 12
   @receiving = false
-
-  # Message, the values of which are sent to Lithne on send_to_lithne
   @message = {
-    on: 0,        # Send signals to Breakout 404?
-    hue1: 222,    # Main effect color
+    on: 0,
+    hue1: 222,
     sat1: 143,
     bri1: 255,
-    hue2: 0,      # Secondary effect color
+    hue2: 0,
     sat2: 0,
     bri2: 0,
-    phue: 0,      # Preview color
+    phue: 0,
     psat: 0,
     pbri: 0,
-    alternate: 0, # Show alternating secondary effect color? 1 or 0
-    animate: 0,   # Instead of using the secondary color,
-                  # animate and animate with the dimmed main color
-    center: 200,  # Center of light effect in room, 0-255 mapped to 0.0-8.0
-    vary: 0,      # Ignored
-    width: 100,   # Width of light effect, 0-255 mapped to 0.0-8.0
-    breathe: 0,   # Preview breathe duration between 0 (0 s) and 100 (2 s)
-    blink: 0,     # Ignored
-    ceiling: 1    # Enable main ceiling light? 1 or 0
+    alternate: 0, # boolean
+    animate: 0,
+    center: 200,
+    vary: 0,
+    width: 100,
+    breathe: 0,
+    blink: 0,
+    ceiling: 1
   }
-
-  # Points between 0 (no effect) and 100 (full effect)
   @points = 0
-
-  # Draw on screen? Very inefficient, disable for long-term usage
+  @mode = :alone
   @draw = true
-
-  # Which point coordinates is the preview based on
   @preview = -1
-
-  # Amount of messages sent
   @sent = 0
   @last_colors = [-1, -1]
 
@@ -128,7 +86,6 @@ def setup
   @touch_distance = 0
   @last_touch_position = -1
   @last_touch_duration = 0
-  @last_touch_durations = []
   @swipe_time = 0
   @points_changed = 0
 
@@ -137,29 +94,29 @@ def setup
   @sense_amount = 0
   @sense_amount_time = 0
   @sense_start_time = 0
-  @last_sense = Hash[(0...16).collect { |k| [k, 0] }]
 
   @update_message = false
 
   background 0
-
-  log 'Time: ' + Time.new.inspect
 end
 
 def draw
-  update
+  #update
 
+  '''
   if read_values
     case @state
     when :calibrate_not_touched then set_minima
     when :calibrate_touched then set_maxima
     end
+    log_values if @logging and @values
   end
+  '''
 
   if @draw
-    draw_palette
     draw_sensed
-    draw_activated
+    draw_touched
+    draw_mode
     draw_message
     draw_status
   end
@@ -168,33 +125,28 @@ end
 #######################################################
 
 def send_to_lithne
-  puts 'sending to lithne'
   string = @message.values.join("\t") + "\n"
   @sent += 1
   @lithne.write string
-  log 'message: ' + string
 end
 
 def receive_from_lithne
-  puts 'receiving from lithne'
+  #puts 'on?' + @message[:on].inspect
   if @lithne.available > 0
     bytes = ''
     bytes = @lithne.read_bytes_until 10 while @lithne.available > 0
     if bytes != ''
-      log String(bytes)
+      str = String(bytes)
+      puts '< Lithne: ' + str
     end
   end
-end
-
-def log str
-  puts "LOG(#{millis}): #{str}"
 end
 
 #######################################################
 
 def load_palettes
   @palettes = {}
-  names = [:default]
+  names = [:detail_cold]
   names.each do |name|
     img = load_image "/Users/sander/Code/vuur/tools/palette_#{name}.png"
     image img, 0, 0
@@ -205,6 +157,7 @@ def load_palettes
     end
     @palettes[name] = colors
   end
+  puts @palettes.inspect
 end
 
 #######################################################
@@ -212,7 +165,6 @@ end
 def reset_cache
   @cached_sensed_points = nil
   @cached_touch_points = nil
-  @cached_activated_points = nil
 end
 
 def update
@@ -221,19 +173,17 @@ def update
 
   update_sensed
   update_touched
-  update_activated
 
   if @state == :running
     on_touch if touching
     fade_out
 
     # TODO set width etc.
-    @message[:bri1] = (255.0 / 100.0 * @points).round # TODO
     ceiling = @message[:ceiling]
     @message[:ceiling] = if @points < 20 then 1 else 0 end
     @update_message = true if ceiling != @message[:ceiling]
 
-    receive_from_lithne # TODO comment out for actual running; this slows things down
+    #receive_from_lithne # TODO comment out for actual running; this slows things down
     send_to_lithne if @update_message
   end
 end
@@ -254,25 +204,6 @@ def update_sensed
     if @sense_amount == 0
     end
   end
-end
-
-def update_activated
-  ap = activated_points
-  if ap.length == 0 and not @previous_activated_points.nil? and @previous_activated_points.length > 0
-    on_activated_end
-  end
-
-  if @previous_activated_points != ap
-    log 'activated: ' + ap.inspect
-  end
-
-  if touching and millis - @touch_start_time > APPLY_TIMEOUT
-    @message[:hue1] = @message[:phue]
-    @message[:sat1] = @message[:psat]
-    @message[:bri1] = @message[:pbri]
-  end
-
-  @previous_activated_points = ap
 end
 
 def update_touched
@@ -302,7 +233,6 @@ def update_touched
       if millis - @touch_end_time > TOUCH_COOLDOWN
         @touch_end_time = millis
         @last_touch_duration = millis - @touch_start_time
-        @last_touch_durations = @last_touch_durations.unshift([@last_touch_duration, millis]).slice(0, TAP_AMOUNT)
         on_touch_end if @state == :running
       end
     end
@@ -339,61 +269,38 @@ end
 #######################################################
 
 def on_touch_end
-  return
   # TODO select colour and set @update_message
   colors_set = 0
-  color = @palettes[:default][@last_touch_position]
+  color = @palettes[:detail_cold][@last_touch_position]
   @message[:hue1] = hue(color).round
   @message[:sat1] = saturation(color).round
   @message[:bri1] = brightness(color).round
-
-  @message[:phue] = 0
-  @message[:psat] = 0
-  @message[:pbri] = 0
-  @message[:breathe] = 100 - @points
 
   default_width = 50
   @message[:width] = default_width + (@sense_amount / 16.0 * (255.0 - default_width)).to_i
 
   @update_message = true
 
-  @update_message = true
-end
-
-def on_activated_end
-  @message[:hue1] = @message[:phue]
-  @message[:sat1] = @message[:psat]
-  @message[:bri1] = @message[:pbri]
-
-  @message[:hue2] = @message[:hue1]
-  @message[:sat2] = @message[:sat1]
-  @message[:bri2] = (@message[:bri1] / 2.0).to_i
-
-  @message[:phue] = 0
-  @message[:psat] = 0
-  @message[:pbri] = 0
-  @message[:breathe] = if @points == 0 then 0 elsif @points == 100 then 1 else 100 - @points end
-
-  # TODO Is this ok?
-  @message[:alternate] = if @last_touch_durations.length == TAP_AMOUNT and millis - @last_touch_durations[-1][1] < TAP_TIMEOUT then 1 else 0 end
-
-  default_width = 30
-  max_activated = 3.0
-  @message[:width] = default_width + (@previous_activated_points.length / max_activated * (255.0 - default_width)).to_i
-
+  '''
+  touch_points.each do |id|
+    if colors_set < 2
+      unless @last_colors[1] == id
+        # TODO
+      end
+    end
+  end
+  '''
   @update_message = true
 end
 
 def on_touch
   add_points 1 if millis - @points_changed > ADD_POINT_INTERVAL and @points < 100
-  point = @center
+  point = touch_points[0]
   unless point.nil? or point == @preview
-    @preview = point
-    color = center_color
+    color = @palettes[:detail_cold][point]
     @message[:phue] = hue(color).round
     @message[:psat] = saturation(color).round
     @message[:pbri] = brightness(color).round
-    @message[:breathe] = 0
     @update_message = true
   end
 end
@@ -405,12 +312,8 @@ end
 def add_points pts
   @points += pts
   @points_changed = millis
-  #@message[:bri1] = (255.0 * @points / 100).to_i
-  unless @message[:pbri] > 0
-    @message[:breathe] = if @points == 0 then 0 elsif @points == 100 then 1 else 100 - @points end
-  end
-  #@message[:breathe] = 100 - @points if @message[:breathe] > 0
-  @message[:breathe] = 0 if @points == 0
+  @message[:bri1] = (255.0 * @points / 100).to_i
+  @message[:breathe] = 100 - @points
   @update_message = true
 end
 
@@ -458,35 +361,10 @@ end
 
 #######################################################
 
-def draw_palette
+def draw_sensed
   no_stroke
   fill 0
-  rect 0, 0, SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2], SENSOR_DISPLAY[1] + SENSOR_DISPLAY[3]
-  push_matrix
-  translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
-  width = 10
-  size = SENSOR_DISPLAY[3] / 4
-  for i in 0...16 do
-    push_matrix
-    translate i / 4 * size, i % 4 * size
-    stroke @palettes[:default][i]
-    stroke_weight width
-    rect width / 2, width / 2, size - width, size - width
-
-
-    fill 255
-    text_size 12
-    text_align CENTER, CENTER
-    text_font @font
-    text "#{i}", size / 2, size / 2
-    fill 0
-
-    pop_matrix
-  end
-  pop_matrix
-end
-
-def draw_sensed
+  rect SENSOR_DISPLAY[0], SENSOR_DISPLAY[1], SENSOR_DISPLAY[2], SENSOR_DISPLAY[3]
   size = SENSOR_DISPLAY[3] / 4
   push_matrix
   translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
@@ -494,66 +372,63 @@ def draw_sensed
     push_matrix
     translate i / 4 * size, i % 4 * size
     no_stroke
-    fill @palettes[:default][i]
+    fill 124
     rect 0, 0, size, size
     pop_matrix
   end
   pop_matrix
 end
 
-def draw_activated
+def draw_touched
   size = SENSOR_DISPLAY[3] / 4
   push_matrix
   translate SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]
-  activated_points.each do |i|
+  touch_points.each do |i|
     ellipse_mode CENTER
-    stroke 255
-    stroke_weight 2
-    no_fill
-    #no_stroke
-    #fill 255
+    no_stroke
+    fill 255
     ellipse (i / 4 + 0.5) * size, (i % 4 + 0.5) * size, 20, 20
   end
-  unless @center.nil?
-    #i = @last_touch_position
+  if @last_touch_position > -1
+    i = @last_touch_position
     ellipse_mode CENTER
-    fill center_color
-    stroke 0
-    stroke_weight 5
-    ellipse @center[0] * size, @center[1] * size, 20, 20
+    stroke 255
+    no_fill
+    ellipse (i / 4 + 0.5) * size, (i % 4 + 0.5) * size, 20, 20
   end
   pop_matrix
 end
 
 def status
-  "
-#{@state}
-#{unless @receiving then 'not ' end}receiving values
-threshold: #{@threshold}
-<<<#{@points} points>>>
-#{@touch_amount} touches#{if swiping then ' (swiping)' end}
-last touch duration: #{@last_touch_duration}
-distance: #{@touch_distance}
-messages sent: #{@sent}
-  ".strip
+  "#{@state} | #{unless @receiving then 'not ' end}receiving values | threshold: #{@threshold} | #{@points} points | #{@touch_amount} touches#{if swiping then ' (swiping)' end} | last touch duration: #{@last_touch_duration} | distance: #{@touch_distance} | messages sent: #{@sent}"
 end
 
 def draw_status
   st = status
   unless st == @cached_status
-    x = SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2] + 30
-    y = 10
-    w = width - x
-    h = SENSOR_DISPLAY[3]
     fill 0
     no_stroke
-    rect x, SENSOR_DISPLAY[1], w, h
+    rect 0, height - 22, width, 22
     fill 255
     text_size 12
-    text_align LEFT, TOP
+    text_align RIGHT, BOTTOM
     text_font @font
-    text st, x, y
+    text st, width - 10, height - 10
     @cached_status = st
+  end
+end
+
+def draw_mode
+  unless @mode == @cached_mode
+    fill 0
+    no_stroke
+    rect SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2], SENSOR_DISPLAY[1], width, SENSOR_DISPLAY[3]
+    text_size 12
+    text_align CENTER, CENTER
+    text_font @font
+    fill 255
+    text "#{@mode}", (width + SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2]) / 2, SENSOR_DISPLAY[1] + SENSOR_DISPLAY[3] * 0.5
+    @cached_mode = @mode
   end
 end
 
@@ -586,7 +461,7 @@ def draw_message
       text "#{item[0]}\n#{item[1]}", 10 + (i + 0.5) * width, MESSAGE_DISPLAY[3] / 2
     end
   end
-
+  
   pop_matrix
 end
 
@@ -601,10 +476,7 @@ def sensed_points
       @values.each_with_index do |v, i|
         if @min[i] and @max[i] and v
           value = map v.to_f, @min[i], @max[i], 0.0, 1.0
-          if value >= @threshold
-            points << i
-            @last_sense[i] = millis
-          end
+          points << i if value >= @threshold
         else
         end
       end
@@ -638,67 +510,9 @@ def touch_points
   end
 end
 
-def activated_points
-  if @cached_activated_points
-    @cached_activated_points
-  else
-    points = []
-    sensed = sensed_points
-    for i in 0...16
-      points << i if millis - @last_sense[i] < TOUCH_TIMEOUT
-    end
-    f = 1.0 / points.length
-    @center = points.reduce [0.0, 0.0] do |result, i|
-      pos = position i
-      [result[0] + f * pos[0], result[1] + f * pos[1]]
-    end
-    @previous_center = @center
-    @center = nil if @center[0] == 0.0 and @center[1] == 0.0
-    @cached_activated_points = points
-    points
-  end
-end
-
-#######################################################
-
-def position i
-  [(i / 4) + 0.5, (i % 4) + 0.5]
-end
-
-def center_color
-  c = [0, 0, 0]
-  f = 1.0 / activated_points.length
-  for i in activated_points
-    pad = @palettes[:default][i]
-    c = [
-      c[0] + f * hue(pad),
-      c[1] + f * saturation(pad),
-      c[2] + f * brightness(pad)
-    ]
-  end
-  color *c
-end
-
-"""
-def previous_center_color
-  c = [0, 0, 0]
-  f = 1.0 / @previous_activated_points.length
-  for i in @previous_activated_points
-    pad = @palettes[:default][i]
-    c = [
-      c[0] + f * hue(pad),
-      c[1] + f * saturation(pad),
-      c[2] + f * brightness(pad)
-    ]
-  end
-  color *c
-end
-"""
-
 #######################################################
 
 def key_pressed
-  puts "key pressed"
   case key
   when ' '
     case @state
@@ -718,6 +532,8 @@ def key_pressed
     end
   when 'o'
     @message[:on] = 1 - @message[:on]
+  when 'l'
+    @logging = !@logging
   when 'm'
     puts 'min: ' + @min.inspect
     puts 'max: ' + @max.inspect
@@ -725,6 +541,13 @@ def key_pressed
     @points = 0
   when '1', '2', '3', '4', '5', '6', '7', '8', '9'
     @threshold = key.to_i / 10.0
+  when "\n"
+    case @mode
+    when :alone then @mode = :group_early
+    when :group_early then @mode = :group_noisy
+    when :group_noisy then @mode = :group_quiet
+    when :group_quiet then @mode = :alone
+    end
   when 'd'
     @draw = !@draw
     @cached_status = nil
