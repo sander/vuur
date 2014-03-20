@@ -24,7 +24,7 @@ final int TOUCH_TIMEOUT = 200;
 final int ADD_POINT_INTERVAL = 200;
 
 // How long to wait before removing a point
-final int FADE_INTERVAL = 2000;
+final int DEFAULT_FADE_INTERVAL = 2000;
 
 // How many taps are needed before activating the 'alternate' mode
 final int TAP_AMOUNT = 3;

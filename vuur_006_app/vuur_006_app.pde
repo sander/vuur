@@ -146,6 +146,8 @@ int[] values = new int[16];
 
 boolean hasRun = false;
 
+int fadeInterval;
+
 String timeString;
 PrintWriter writer;
 PrintWriter table;
@@ -159,6 +161,8 @@ void setup() {
 
   arduino = new Serial(this, "/dev/tty.usbmodem1421", 115200);
   lithneSerial = new Serial(this, "/dev/tty.usbmodem1411", 115200);
+  
+  fadeInterval = DEFAULT_FADE_INTERVAL;
 
   // Initialise calibration values
   for (int i = 0; i < nPads; i++)
@@ -215,6 +219,7 @@ void setup() {
   addColumn("Ceiling");
   addColumn("Loudness");
   addColumn("Motion");
+  addColumn("Fade interval");
   for (int i = 0; i < 37; i++) {
     addColumn("sizedParameter " + i);
   }
@@ -271,7 +276,7 @@ void log(String key, String value) {
   println(line);
 
   table.print("\"" + key + "\",");
-  long[] row = new long[3 + 16 + 6 + 7 + 37];
+  long[] row = new long[3 + 16 + 6 + 8 + 37];
   int n = 0;
   row[n++] = System.currentTimeMillis();
   row[n++] = int(on);
@@ -291,6 +296,7 @@ void log(String key, String value) {
   row[n++] = int(points < CEILING_THRESHOLD);
   row[n++] = loudness;
   row[n++] = motion;
+  row[n++] = fadeInterval;
   for (int i = 0; i < 37; i++) {
     row[n++] = parameterArray[i];
   }
@@ -533,7 +539,7 @@ void on_touch() {
 }
 
 void fade_out() {
-  if (millis() - points_changed > FADE_INTERVAL && points > 0) {
+  if (millis() - points_changed > fadeInterval && points > 0) {
     add_points(-1);
     message.sendToLithne();
   }

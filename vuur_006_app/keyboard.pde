@@ -59,5 +59,16 @@ void keyPressed() {
     on = false;
     message.update = true;
     break;
+  default:
+    switch (keyCode) {
+    case 38: // arrow up
+      fadeInterval += 100;
+      log("fadeInterval", fadeInterval);
+      break;
+    case 40: // arrow down
+      fadeInterval -= 100;
+      log("fadeInterval", fadeInterval);
+      break;
+    }
   }
 }
