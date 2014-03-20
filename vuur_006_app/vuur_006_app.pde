@@ -691,8 +691,10 @@ String status() {
   s.append(last_touch_duration);
   s.append("\ndistance: ");
   s.append(touch_distance);
-  s.append("\nmessages sent: ");
+  s.append("\nmessages sent to lithne: ");
   s.append(sent);
+  s.append("\nfade interval: ");
+  s.append(fadeInterval);
   return s.toString();
 }
 
