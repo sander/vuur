@@ -52,7 +52,7 @@ char parameterArray[] = {
 };
 
 void initBreakout() {
-  lithne = new Lithne(this, "/dev/tty.usbmodem1413", 115200);
+  lithne = new Lithne(this, "/dev/tty.usbmodem1a12413"/*"/dev/tty.usbmodem1413"*/, 115200);
   lithne.enableDebug();
   lithne.begin();
   

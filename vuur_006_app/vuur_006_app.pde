@@ -159,8 +159,8 @@ void setup() {
 
   initBreakout();
 
-  arduino = new Serial(this, "/dev/tty.usbmodem1421", 115200);
-  lithneSerial = new Serial(this, "/dev/tty.usbmodem1411", 115200);
+  arduino = new Serial(this, "/dev/tty.usbmodem1a12421"/*"/dev/tty.usbmodem1421"*/, 115200);
+  lithneSerial = new Serial(this, "/dev/tty.usbmodem1a12411"/*"/dev/tty.usbmodem1411"*/, 115200);
   
   fadeInterval = DEFAULT_FADE_INTERVAL;
 
@@ -339,7 +339,8 @@ void update() {
   }
 
   if (on && !hasRun) {
-    setUserLocation(250, 480);
+    //setUserLocation(250, 480);
+    setUserLocation(250, 100);
     sendParamArray();
     hasRun = true;
     setCeiling(false);
