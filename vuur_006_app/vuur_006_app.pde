@@ -568,8 +568,9 @@ boolean read_values() {
   while (arduino.available () > 0)
     vals = arduino.readBytesUntil(10);
   if (vals != null && !vals.equals("")) {
+    // Format: millis\t and then 16 values separated by \t and then \n
     int[] numbers = new int[16];
-    String[] items = new String(vals).split("\t");
+    String[] items = new String(vals).trim().split("\t");
     if (receiving) {
       for (int i = 0; i < max(nPads, items.length - 1); i++)
         numbers[i] = int(items[i + 1]);
