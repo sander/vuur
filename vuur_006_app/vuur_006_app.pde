@@ -15,6 +15,9 @@ float threshold;
 
 int lastCenterMove;
 
+boolean onTheSpotCalibration = false;
+boolean recalibrateMaximaOnTheSpot = false;
+
 class Pad {
   int min;
   int max;
@@ -22,6 +25,7 @@ class Pad {
   long senseStart;
   long senseStop;
   boolean activated;
+  int onTheSpotPreviousMin;
 
   // Store the last measured sensor values
   int value;
@@ -256,6 +260,11 @@ void draw() {
       break;
     case State.CALIBRATE_TOUCHED:
       set_maxima();
+      break;
+    case State.RUNNING:
+      if (recalibrateMaximaOnTheSpot)
+        set_maxima();
+      break;
     }
   }
 
@@ -375,7 +384,7 @@ void update() {
       parameterArray[4] = char(0);
       parameterArray[6] = char(0);
 
-      parameterArray[36] = char(int(map(size, 0, 255, 100, 255)));
+      parameterArray[36] = char(int(map(size, 0, 255, 80, 255)));
 
       parameterArray[0] = parameterArray[9] = 1;
     }

@@ -1,3 +1,17 @@
+void saveCalibration() {
+  JSONObject json = new JSONObject();
+  JSONArray min = new JSONArray();
+  JSONArray max = new JSONArray();
+  for (int i = 0; i < nPads; i++) {
+    min.setInt(i, pads[i].min);
+    max.setInt(i, pads[i].max);
+  }
+  json.setJSONArray("min", min);
+  json.setJSONArray("max", max);
+  json.setFloat("threshold", threshold);
+  saveJSONObject(json, CALIBRATION_FILE);
+}
+
 void keyPressed() {
   switch (key) {
   case ' ':
@@ -9,17 +23,7 @@ void keyPressed() {
       break;
     case State.CALIBRATE_TOUCHED:
       state = State.RUNNING;
-      JSONObject json = new JSONObject();
-      JSONArray min = new JSONArray();
-      JSONArray max = new JSONArray();
-      for (int i = 0; i < nPads; i++) {
-        min.setInt(i, pads[i].min);
-        max.setInt(i, pads[i].max);
-      }
-      json.setJSONArray("min", min);
-      json.setJSONArray("max", max);
-      json.setFloat("threshold", threshold);
-      saveJSONObject(json, CALIBRATION_FILE);
+      saveCalibration();
       break;
     case State.RUNNING:
       state = State.RUNNING;
@@ -58,6 +62,39 @@ void keyPressed() {
     turnOff();
     on = false;
     message.update = true;
+    break;
+  case 'c':
+    onTheSpotCalibration = true;
+    //state = State.CALIBRATE_NOT_TOUCHED;
+    for (int i = 0; i < nPads; i++)
+      pads[i].onTheSpotPreviousMin = pads[i].min;
+    set_minima();
+    log("recalibration", "minima reset, press y to confirm or n to cancel");
+    print("was: ");
+    for (int i = 0; i < nPads; i++)
+      print(pads[i].onTheSpotPreviousMin + "\t");
+    println();
+    print("became: ");
+    for (int i = 0; i < nPads; i++)
+      print(pads[i].min + "\t");
+    println();
+    break;
+  case 'y':
+    onTheSpotCalibration = false;
+    saveCalibration();
+    //state = State.RUNNING;
+    log("recalibration", "confirmed");
+    break;
+  case 'n':
+    onTheSpotCalibration = false;
+    //state = State.RUNNING;
+    for (int i = 0; i < nPads; i++)
+      pads[i].min = pads[i].onTheSpotPreviousMin;
+    log("recalibration", "reverted");
+    break;
+  case 'm':
+    recalibrateMaximaOnTheSpot = !recalibrateMaximaOnTheSpot;
+    log("recalibrate maxima", "" + recalibrateMaximaOnTheSpot);
     break;
   default:
     switch (keyCode) {
