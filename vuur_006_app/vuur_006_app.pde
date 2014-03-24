@@ -340,7 +340,8 @@ void update() {
 
   if (on && !hasRun) {
     //setUserLocation(250, 480);
-    setUserLocation(250, 100);
+    //setUserLocation(250, 100);
+    setUserLocation(270, 100);
     sendParamArray();
     hasRun = true;
     setCeiling(false);
