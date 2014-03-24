@@ -18,7 +18,7 @@ final int[] MESSAGE_DISPLAY = {
 final int TOUCH_COOLDOWN = 100;
 
 // How long a pad needs to sense a high value before it is considered touched
-final int TOUCH_TIMEOUT = 200;
+final int TOUCH_TIMEOUT = 300;
 
 // How long to wait before adding another point
 final int ADD_POINT_INTERVAL = 200;
