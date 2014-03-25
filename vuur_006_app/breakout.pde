@@ -2,7 +2,6 @@ final long REGISTER_INTERVAL = 50000;
 long lastRegistered = -REGISTER_INTERVAL;
 FunctionTable ft = new FunctionTable();
 
-
 char parameterArray[] = {
   // Local Indirect
   1, // 2 colors
@@ -50,6 +49,23 @@ char parameterArray[] = {
 
   255 //  width
 };
+
+int loudness;
+int motion;
+
+public class FunctionTable implements MessageListener
+{
+  public void messageEventReceived( MessageEvent event )
+  {
+    if (event.getMessage().functionIs("motion")) {
+      motion = event.getMessage().getArgument(0);
+      log("motion", motion);
+    } else if (event.getMessage().functionIs("loudness")) {
+      loudness = event.getMessage().getArgument(0);
+      log("loudness", loudness);
+    }
+  }
+}
 
 void initBreakout() {
   lithne = new Lithne(this, "/dev/tty.usbmodem1a12413"/*"/dev/tty.usbmodem1413"*/, 115200);

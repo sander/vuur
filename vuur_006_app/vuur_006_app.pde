@@ -18,18 +18,6 @@ int lastCenterMove;
 boolean onTheSpotCalibration = false;
 boolean recalibrateMaximaOnTheSpot = false;
 
-class Pad {
-  int min;
-  int max;
-  long lastSense;
-  long senseStart;
-  long senseStop;
-  boolean activated;
-  int onTheSpotPreviousMin;
-
-  // Store the last measured sensor values
-  int value;
-}
 final int nPads = 16;
 Pad[] pads = new Pad[nPads];
 
@@ -52,53 +40,6 @@ boolean on = false;
 int size = 100;
 
 // Message, the values of which are sent to Lithne on send_to_lithne
-class VuurMessage {
-  int hue1 = 222;      // Main effect color
-  int sat1 = 143;
-  int bri1 = 255;
-  int phue = 0;        // Preview color
-  int psat = 0;
-  int pbri = 0;
-  int breathe = 0;     // Preview breathe duration between 0 (0 s) and 100 (2 s)
-  
-  boolean isSent = false;
-
-  boolean update = true;
-
-  int[] toArray() {
-    int[] array = {
-      hue1, sat1, bri1, 
-      phue, psat, pbri, 
-      breathe
-    };
-    //array[5] = round(float(array[5]) * 0.5);
-    return array;
-  }
-
-  String toString() {
-    StringBuilder sbStr = new StringBuilder();
-    int[] array = toArray();
-    for (int i = 0; i < array.length; i++) {
-      if (i > 0)
-        sbStr.append('\t');
-      sbStr.append(array[i]);
-    }
-    sbStr.append('\n');
-    return sbStr.toString();
-  }
-
-  void sendToLithne() {
-    isSent = false;
-  }
-  
-  void actuallySendToLithne() {
-    String message = toString();
-    lithneSerial.write(message);
-    sent += 1;
-    //log("message", message);
-    isSent = true;
-  }
-}
 VuurMessage message = new VuurMessage();
 
 // Points between 0 (no effect) and 100 (full effect)
@@ -106,13 +47,6 @@ byte points = 0;
 
 // Draw on screen? Very inefficient, disable for long-term usage
 boolean drawing = true;
-
-// Which point coordinates is the preview based on
-/*
-float[] preview = {
- -1.0, -1.0
- };
- */
 
 // Amount of messages sent
 int sent = 0;
@@ -151,10 +85,6 @@ int[] values = new int[16];
 boolean hasRun = false;
 
 int fadeInterval;
-
-String timeString;
-PrintWriter writer;
-PrintWriter table;
 
 void setup() {
   size(WIDTH, HEIGHT);
@@ -199,45 +129,7 @@ void setup() {
   preview.indicatorColor = 0;
   preview.velocity = PREVIEW_VELOCITY;
 
-  timeString = "" + (System.currentTimeMillis() / 1000);
-
-  table = createWriter("../data/table-" + timeString + ".csv");
-
-  addColumn("Log key");
-  addColumn("Timestamp");
-  addColumn("Sending to Breakout");
-  addColumn("Some pads activated");
-  for (int i = 0; i < 16; i++) {
-    addColumn("Pad " + i + " activated");
-  }
-  addColumn("Color hue");
-  addColumn("Color saturation");
-  addColumn("Color brightness");
-  addColumn("Preview hue");
-  addColumn("Preview saturation");
-  addColumn("Preview brightness");
-  addColumn("Breathe");
-  addColumn("Points");
-  addColumn("Width");
-  addColumn("Effect brightness");
-  addColumn("Ceiling");
-  addColumn("Loudness");
-  addColumn("Motion");
-  addColumn("Fade interval");
-  for (int i = 0; i < 37; i++) {
-    addColumn("sizedParameter " + i);
-  }
-  table.println();
-
-  writer = createWriter("../data/log-" + timeString + ".txt");
-  log("time", timeString);
-}
-
-void addColumn(String name, boolean comma) {
-  table.print('"' + name + '"' + (comma ? "," : ""));
-}
-void addColumn(String name) {
-  addColumn(name, true);
+  initLog();
 }
 
 void draw() {
@@ -275,52 +167,6 @@ void draw() {
     draw_message();
     draw_status();
   }
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void log(String key, String value) {
-  String line = System.currentTimeMillis() + ": " + key + ": " + value;
-  writer.println(line);
-  println(line);
-
-  table.print("\"" + key + "\",");
-  long[] row = new long[3 + 16 + 6 + 8 + 37];
-  int n = 0;
-  row[n++] = System.currentTimeMillis();
-  row[n++] = int(on);
-  row[n++] = int(activated_points().size() > 0);
-  for (int i = 0; i < nPads; i++)
-    row[n++] = int(pads[i].activated);
-  row[n++] = message.hue1;
-  row[n++] = message.sat1;
-  row[n++] = message.bri1;
-  row[n++] = message.phue;
-  row[n++] = message.psat;
-  row[n++] = message.pbri;
-  row[n++] = message.breathe;
-  row[n++] = points;
-  row[n++] = size;
-  row[n++] = round(float(message.bri1) / 100.0 * points);
-  row[n++] = int(points < CEILING_THRESHOLD);
-  row[n++] = loudness;
-  row[n++] = motion;
-  row[n++] = fadeInterval;
-  for (int i = 0; i < 37; i++) {
-    row[n++] = parameterArray[i];
-  }
-  addRows(row);
-  table.println();
-}
-
-void addRows(long[] values) {
-  for (int i = 0; i < values.length; i++) {
-    table.print(values[i] + ",");
-  }
-}
-
-void log(String key, int value) {
-  log(key, Integer.toString(value));
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -461,12 +307,6 @@ void updateTouched() {
       if (millis() - touch_end_time > TOUCH_COOLDOWN) {
         touch_end_time = millis();
         last_touch_duration = millis() - touch_start_time;
-        /* TODO
-         int[][] newLast_touch_durations = new int[max(last_touch_durations + 1, TAP_AMOUNT)];
-         int i;
-         if
-         last_touch_durations = last_touch_durations.unshift([@last_touch_duration, millis]).slice(0, TAP_AMOUNT)
-         */
       }
     }
   }
@@ -596,19 +436,6 @@ boolean read_values() {
 
 void log_values() {
   println(arrayToString(values));
-  /* TODO
-   if (state == State.RUNNING) {
-   puts @values.each_with_index.map { |v, i|
-   if @min[i] and @max[i]
-   map(v.to_f, @min[i], @max[i], 0, 1).round(2)
-   else
-   v
-   end
-   }.inspect
-   } else {
-   puts @values.inspect
-   }
-   */
 }
 
 void set_minima() {
@@ -621,145 +448,6 @@ void set_maxima() {
   for (int i = 0; i < values.length; i++)
     if (pads[i].max == 0 || values[i] > pads[i].max)
       pads[i].max = values[i];
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-void draw_palette() {
-  noStroke();
-  fill(0);
-  rect(0, 0, SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2], SENSOR_DISPLAY[1] + SENSOR_DISPLAY[3]);
-  pushMatrix();
-  translate(SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]);
-  int width = 10;
-  int size = SENSOR_DISPLAY[3] / 4;
-  for (int i = 0; i < nPads; i++) {
-    pushMatrix();
-    translate(i / 4 * size, i % 4 * size);
-    stroke(100);
-    strokeWeight(width);
-    rect(width / 2, width / 2, size - width, size - width);
-
-    fill(255);
-    textSize(12);
-    textAlign(CENTER, CENTER);
-    textFont(font);
-    text(i, size / 2, size / 2);
-    fill(0);
-
-    popMatrix();
-  }
-  popMatrix();
-}
-
-void draw_sensed() {
-  int size = SENSOR_DISPLAY[3] / 4;
-  pushMatrix();
-  translate(SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]);
-  IntList sp = sensed_points();
-  for (int i = 0; i < sp.size(); i++) {
-    int p = sp.get(i);
-    pushMatrix();
-    translate(p / 4 * size, p % 4 * size);
-    noStroke();
-    fill(150);
-    rect(0, 0, size, size);
-    popMatrix();
-  }
-  popMatrix();
-}
-
-void draw_activated() {
-  int size = SENSOR_DISPLAY[3] / 4;
-  pushMatrix();
-  translate(SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]);
-  IntList ap = activated_points();
-  for (int i = 0; i < ap.size(); i++) {
-    int p = ap.get(i);
-    ellipseMode(CENTER);
-    stroke(255);
-    strokeWeight(2);
-    noFill();
-    ellipse((p / 4 + 0.5) * size, (p % 4 + 0.5) * size, 20, 20);
-  }
-  preview.draw(size);
-  center.draw(size);
-  popMatrix();
-}
-
-String status() {
-  StringBuilder s = new StringBuilder();
-  s.append(state);
-  s.append('\n');
-  if (!receiving)
-    s.append(" not");
-  s.append("receiving values\nthreshold: ");
-  s.append(threshold);
-  s.append("\n<<<");
-  s.append(points);
-  s.append(" points>>>\n");
-  s.append(touch_amount);
-  s.append(" touches\nlast touch duration: ");
-  s.append(last_touch_duration);
-  s.append("\ndistance: ");
-  s.append(touch_distance);
-  s.append("\nmessages sent to lithne: ");
-  s.append(sent);
-  s.append("\nfade interval: ");
-  s.append(fadeInterval);
-  return s.toString();
-}
-
-void draw_status() {
-  String st = status();
-  if (cached_status == null || !st.equals(cached_status)) {
-    int x = SENSOR_DISPLAY[0] + SENSOR_DISPLAY[2] + 30;
-    int y = 10;
-    int w = width - x;
-    int h = SENSOR_DISPLAY[3];
-    fill(0);
-    noStroke();
-    rect(x, SENSOR_DISPLAY[1], w, h);
-    fill(255);
-    textSize(12);
-    textAlign(LEFT, TOP);
-    textFont(font);
-    text(st, x, y);
-    cached_status = st;
-  }
-}
-
-void draw_message() {
-  pushMatrix();
-  translate(MESSAGE_DISPLAY[0], MESSAGE_DISPLAY[1]);
-
-  // background
-  noStroke();
-  fill(40);
-  rect(0, 0, MESSAGE_DISPLAY[2], MESSAGE_DISPLAY[3]);
-
-  int width = (MESSAGE_DISPLAY[2] - 20) / 15;
-
-  noStroke();
-  fill(message.hue1, message.sat1, message.bri1);
-  rect(15 + width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20);
-  fill(message.phue, message.psat, message.pbri);
-  rect(15 + 3 * width, 10, 2 * width - 10, MESSAGE_DISPLAY[3] - 20);
-
-  textSize(12);
-  textAlign(CENTER, CENTER);
-  textFont(font);
-  fill(255);
-  text("on\n" + Boolean.toString(on), 10 + 0.5 * width, MESSAGE_DISPLAY[3] / 2);
-  /*
-  text("center\n" + Integer.toString(message.center), 10 + 9.5 * width, MESSAGE_DISPLAY[3] / 2);
-   text("vary\n" + Integer.toString(message.vary), 10 + 10.5 * width, MESSAGE_DISPLAY[3] / 2);
-   */
-  text("size\n" + Integer.toString(size), 10 + 11.5 * width, MESSAGE_DISPLAY[3] / 2);
-  text("breathe\n" + Integer.toString(message.breathe), 10 + 12.5 * width, MESSAGE_DISPLAY[3] / 2);
-  //text("blink\n" + Integer.toString(message.blink), 10 + 13.5 * width, MESSAGE_DISPLAY[3] / 2);
-  //text("ceiling\n" + Integer.toString(message.ceiling), 10 + 14.5 * width, MESSAGE_DISPLAY[3] / 2);
-  popMatrix();
 }
 
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -842,14 +530,5 @@ IntList activated_points() {
     center.moveTo(points);
   }
   return cached_activated_points = points;
-}
-
-//////////////////////////////////////////////////////////////////////////////////////////////////////////////
-
-float[] position(int i) {
-  float[] result = {
-    (i / 4) + 0.5, (i % 4) + 0.5
-  };
-  return result;
 }
 

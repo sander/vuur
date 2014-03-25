@@ -48,9 +48,16 @@ class Point {
     int[] hsb = xyToHSB(map(x, 0.5, 3.5, 0.0, 1.0), map(y, 0.5, 3.5, 0.0, 1.0));
     return color(hsb[0], hsb[1], hsb[2]);
   }
-  
+
   boolean equals(Point p) {
     return x == p.x && y == p.y;
+  }
+
+  float[] position(int i) {
+    float[] result = {
+      (i / 4) + 0.5, (i % 4) + 0.5
+    };
+    return result;
   }
 }
 
