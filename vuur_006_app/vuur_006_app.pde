@@ -399,6 +399,10 @@ void on_touch() {
     message.update = true;
     center.updated = false;
   }
+  if (center2.updated) {
+    message.update = true;
+    center2.updated = false;
+  }
 }
 
 void fade_out() {
