@@ -205,7 +205,7 @@ void update() {
   if (on && !hasRun) {
     //setUserLocation(250, 480);
     //setUserLocation(250, 100);
-    setUserLocation(270, 100);
+    setUserLocation(240, 100);
     sendParamArray();
     hasRun = true;
     setCeiling(false);
@@ -238,12 +238,12 @@ void update() {
       parameterArray[1] = parameterArray[10] = char(round(hue(color1)));
       parameterArray[3] = parameterArray[12] = char(round(saturation(color1)));
       parameterArray[5] = char(brightness);
-      parameterArray[14] = char(brightness / 2);
+      parameterArray[14] = char(byte((float)brightness * 0.8));// / 2);
 
       parameterArray[2] = parameterArray[11] = char(round(hue(color2)));
       parameterArray[4] = parameterArray[13] = char(round(saturation(color2)));
       parameterArray[6] = char(brightness);
-      parameterArray[15] = char(brightness / 2);
+      parameterArray[15] = char(byte((float)brightness * 0.8));// / 2);
 
       parameterArray[36] = char(int(map(size, 0, 255, 80, 255)));
 
@@ -390,6 +390,7 @@ void on_touch() {
     message.phue = round(hue(c));
     message.psat = round(saturation(c));
     message.pbri = round(brightness(c));
+    setFeedbackColor();
     message.breathe = 0;
     message.sendToLithne();
     preview.updated = false;

@@ -18,7 +18,7 @@ final int[] MESSAGE_DISPLAY = {
 final int TOUCH_COOLDOWN = 100;
 
 // How long a pad needs to sense a high value before it is considered touched
-final int TOUCH_TIMEOUT = 300;
+final int TOUCH_TIMEOUT = 100;
 
 // How long to wait before adding another point
 final int ADD_POINT_INTERVAL = 200;
@@ -43,7 +43,7 @@ final String CALIBRATION_FILE = "calibration.dump";
 final int CEILING_THRESHOLD = 20;
 
 // How many milliseconds does it take to go from the top left to the top right?
-final float MIN_VELOCITY = 0.005;
+final float MIN_VELOCITY = 0.001;
 final float MAX_VELOCITY = 0.050;
 
 final float PREVIEW_VELOCITY = 0.08;
