@@ -43,7 +43,8 @@ final String CALIBRATION_FILE = "calibration.dump";
 final int CEILING_THRESHOLD = 20;
 
 // How many milliseconds does it take to go from the top left to the top right?
-final float VELOCITY = 0.005;
+final float MIN_VELOCITY = 0.001;
+final float MAX_VELOCITY = 0.010;
 
 final float PREVIEW_VELOCITY = 0.08;
 

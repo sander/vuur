@@ -46,7 +46,7 @@ void draw_activated() {
   int size = SENSOR_DISPLAY[3] / 4;
   pushMatrix();
   translate(SENSOR_DISPLAY[0], SENSOR_DISPLAY[1]);
-  IntList ap = activated_points();
+  IntList ap = surface.activated();
   for (int i = 0; i < ap.size(); i++) {
     int p = ap.get(i);
     ellipseMode(CENTER);

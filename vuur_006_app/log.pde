@@ -53,7 +53,7 @@ void log(String key, String value) {
   int n = 0;
   row[n++] = System.currentTimeMillis();
   row[n++] = int(on);
-  row[n++] = int(activated_points().size() > 0);
+  row[n++] = int(surface.activated().size() > 0);
   for (int i = 0; i < nPads; i++)
     row[n++] = int(pads[i].activated);
   row[n++] = message.hue1;

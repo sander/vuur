@@ -18,6 +18,7 @@ boolean recalibrateMaximaOnTheSpot = false;
 
 final int nPads = 16;
 Pad[] pads = new Pad[nPads];
+Surface surface = new Surface(pads); 
 
 // Use to draw on screen
 PFont font = createFont("AvenirNext-DemiBold", 14);
@@ -72,7 +73,6 @@ String cached_mode = null;
 String cached_status = null;
 IntList cached_sensed_points = null;
 IntList cached_touch_points = null;
-IntList cached_activated_points = null;
 IntList previous_activated_points = null;
 
 Point center;
@@ -130,11 +130,9 @@ void setup() {
 
   center = new Point();
   center.indicatorColor = 255;
-  center.velocity = VELOCITY;
 
   center2 = new Point();
   center2.indicatorColor = 100;
-  center2.velocity = VELOCITY;
 
   preview = new Point();
   preview.indicatorColor = 0;
@@ -185,7 +183,7 @@ void draw() {
 void resetCache() {
   cached_sensed_points = null;
   cached_touch_points = null;
-  cached_activated_points = null;
+  surface.resetCache();
 }
 
 boolean reset = false;
@@ -280,7 +278,14 @@ void updateSensed() {
 }
 
 void updateActivated() {
-  IntList ap = activated_points();
+  IntList ap = surface.activated();
+
+  if (ap.size() > 0) {
+    preview.moveTo(ap);
+    center.velocity = center2.velocity = map(surface.numberOfActivatedPadsDuringInteraction(), 0, surface.pads.length, MIN_VELOCITY, MAX_VELOCITY);
+    ((Point)(alternateCenter ? center : alternateCenter)).moveTo(ap);
+  }
+
   if (ap.size() == 0 && previous_activated_points != null && previous_activated_points.size() > 0) {
     on_activated_end();
   }
@@ -374,7 +379,10 @@ void on_activated_end() {
   //int default_width = 30;
   //float max_activated = 3.0;
   //size = default_width + int(previous_activated_points.size() / max_activated * (255.0 - default_width));
-  //size = int(255.0 * (float(points) / 255.0)); 
+  //size = int(255.0 * (float(points) / 255.0));
+
+  for (int i = 0; i < nPads; i++)
+    pads[i].activatedDuringInteraction = false; 
 
   message.update = true;
 }
@@ -522,29 +530,5 @@ IntList touch_points() {
   for (int j = 3; j < points.size(); j++)
     points.remove(j);
   return points;
-}
-
-IntList activated_points() {
-  if (cached_activated_points != null)
-    return cached_activated_points;
-
-  IntList points = new IntList();
-  IntList sensed = sensed_points();
-
-  for (int i = 0; i < 16; i++)
-    if ((pads[i].activated && millis() - pads[i].lastSense < TOUCH_TIMEOUT) || // actief en te kort geleden voor timeout, hou actief
-    (pads[i].senseStart != 0 && millis() - pads[i].senseStart > TOUCH_TIMEOUT)) { // voldoende lang geleden begonnen met sensen
-      points.append(i);
-      pads[i].activated = true;
-    } 
-    else {
-      pads[i].activated = false;
-    }
-
-  if (points.size() > 0) {
-    preview.moveTo(points);
-    ((Point)(alternateCenter ? center : alternateCenter)).moveTo(points);
-  }
-  return cached_activated_points = points;
 }
 

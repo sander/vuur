@@ -6,6 +6,7 @@ class Pad {
   long senseStop;
   boolean activated;
   int onTheSpotPreviousMin;
+  boolean activatedDuringInteraction;
 
   // Store the last measured sensor values
   int value;
