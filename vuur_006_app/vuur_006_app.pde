@@ -14,7 +14,7 @@ int max;
 float threshold;
 
 boolean onTheSpotCalibration = false;
-boolean recalibrateMaximaOnTheSpot = false;
+boolean recalibrateMaximaOnTheSpot = true;
 
 final int nPads = 16;
 Pad[] pads = new Pad[nPads];
@@ -34,7 +34,7 @@ class State {
 int state;
 
 // Send signals to Breakout 404?
-boolean on = false;
+boolean on = true;
 
 int size = 100;
 
@@ -216,8 +216,10 @@ void update() {
       on_touch();
     fade_out();
 
-    if (debouncedTouching.update(touching()) && !debouncedTouching.get())
+    if (debouncedTouching.update(touching()) && !debouncedTouching.get()) {
       alternateCenter = !alternateCenter;
+      setFeedbackColor();
+    }
 
     int brightness = round(float(message.bri1) / 100.0 * points);
     size = int(map(points, 0, 100, 0, 255));
@@ -230,15 +232,18 @@ void update() {
     }
 
     if (message.update) {
+      color color1 = center.getColor();
       color color2 = center2.getColor();
 
-      parameterArray[1] = parameterArray[10] = char(message.hue1);
-      parameterArray[3] = parameterArray[12] = char(message.sat1);
-      parameterArray[5] = parameterArray[14] = char(brightness);
+      parameterArray[1] = parameterArray[10] = char(round(hue(color1)));
+      parameterArray[3] = parameterArray[12] = char(round(saturation(color1)));
+      parameterArray[5] = char(brightness);
+      parameterArray[14] = char(brightness / 2);
 
       parameterArray[2] = parameterArray[11] = char(round(hue(color2)));
       parameterArray[4] = parameterArray[13] = char(round(saturation(color2)));
-      parameterArray[6] = parameterArray[15] = char(brightness);
+      parameterArray[6] = char(brightness);
+      parameterArray[15] = char(brightness / 2);
 
       parameterArray[36] = char(int(map(size, 0, 255, 80, 255)));
 
@@ -292,12 +297,6 @@ void updateActivated() {
 
   if (previous_activated_points == null || !intListsEqual(previous_activated_points, ap)) {
     log("activated", intListToString(ap));
-  }
-
-  if (touching() && millis() - touch_start_time > APPLY_TIMEOUT && message.pbri > 0) {
-    message.hue1 = message.phue;
-    message.sat1 = message.psat;
-    message.bri1 = message.pbri;
   }
 
   previous_activated_points = ap;
@@ -358,12 +357,6 @@ float distance(int a, int b) {
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 void on_activated_end() {
-  if (message.pbri > 0) {
-    message.hue1 = message.phue;
-    message.sat1 = message.psat;
-    message.bri1 = message.pbri;
-  }
-
   message.phue = 0;
   message.psat = 0;
   message.pbri = 0;
@@ -372,6 +365,8 @@ void on_activated_end() {
   else
     message.breathe = 0;
   message.sendToLithne();
+  
+  preview.setTo(nextCenter());
 
   // TODO Is this ok?
   //@message[:alternate] = if @last_touch_durations.length == TAP_AMOUNT and millis - @last_touch_durations[-1][1] < TAP_TIMEOUT then 1 else 0 end
@@ -400,10 +395,6 @@ void on_touch() {
     preview.updated = false;
   }
   if (center.updated) {
-    color c2 = center.getColor();
-    message.hue1 = round(hue(c2));
-    message.sat1 = round(saturation(c2));
-    message.bri1 = round(brightness(c2));
     message.update = true;
     center.updated = false;
   }
@@ -532,3 +523,18 @@ IntList touch_points() {
   return points;
 }
 
+void setFeedbackColor() {
+  color c = currentCenter().getColor();
+  message.hue1 = round(hue(c));
+  message.sat1 = round(saturation(c));
+  message.bri1 = round(brightness(c));
+  message.sendToLithne();
+}
+
+Point currentCenter() {
+  return (alternateCenter ? center : center2);
+}
+
+Point nextCenter() {
+  return (!alternateCenter ? center : center2);
+}

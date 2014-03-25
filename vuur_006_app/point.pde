@@ -7,6 +7,11 @@ class Point {
   float py;
   int lastMove;
   boolean updated;
+  
+  void setTo(Point point) {
+    px = x = point.x;
+    py = y = point.y;
+  }
 
   void moveTo(IntList points) {
     float f = 1.0 / points.size();

@@ -81,6 +81,10 @@ String status() {
   s.append(sent);
   s.append("\nfade interval: ");
   s.append(fadeInterval);
+  s.append("\nactivated: ");
+  s.append(surface.numberOfActivatedPadsDuringInteraction());
+  s.append("\nvelocity: ");
+  s.append(center.velocity);
   return s.toString();
 }
 

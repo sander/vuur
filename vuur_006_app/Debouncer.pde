@@ -9,7 +9,7 @@ class Debouncer<T> {
       lastDebounceTime = millis();
       lastState = reading;
     }
-    if ((millis() - lastDebounceTime) > delay) {
+    if (state == null || (millis() - lastDebounceTime) > delay) {
       if (!reading.equals(state)) {
         state = reading;
         return true;

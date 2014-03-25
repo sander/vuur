@@ -6,7 +6,7 @@ class Surface {
   Surface(Pad[] pads) {
     this.pads = pads;
   }
-  
+
   int numberOfActivatedPadsDuringInteraction() {
     int n = 0;
     for (int i = 0; i < pads.length; i++)
@@ -23,14 +23,8 @@ class Surface {
     IntList sensed = sensed_points();
 
     for (int i = 0; i < 16; i++)
-      if ((pads[i].activated && millis() - pads[i].lastSense < TOUCH_TIMEOUT) || // actief en te kort geleden voor timeout, hou actief
-      (pads[i].senseStart != 0 && millis() - pads[i].senseStart > TOUCH_TIMEOUT)) { // voldoende lang geleden begonnen met sensen
+      if (pads[i].updateActivated(sensed.hasValue(i)))
         points.append(i);
-        pads[i].activated = true;
-        pads[i].activatedDuringInteraction = true;
-      } 
-      else
-        pads[i].activated = false;
     return cached_activated_points = points;
   }
 
