@@ -79,6 +79,7 @@ Point center;
 Point center2;
 Point preview;
 boolean alternateCenter;
+Debouncer<Boolean> debouncedTouching = new Debouncer<Boolean>();
 
 int[] values = new int[16];
 
@@ -93,9 +94,15 @@ void setup() {
 
   initBreakout();
 
-  arduino = new Serial(this, "/dev/tty.usbmodem1a12421"/*"/dev/tty.usbmodem1421"*/, 115200);
-  lithneSerial = new Serial(this, "/dev/tty.usbmodem1a12411"/*"/dev/tty.usbmodem1411"*/, 115200);
-  
+  if (USE_HUB) {
+    arduino = new Serial(this, "/dev/tty.usbmodem1a12421", 115200);
+    lithneSerial = new Serial(this, "/dev/tty.usbmodem1a12411", 115200);
+  } 
+  else {
+    arduino = new Serial(this, "/dev/tty.usbmodem1421", 115200);
+    lithneSerial = new Serial(this, "/dev/tty.usbmodem1411", 115200);
+  }
+
   fadeInterval = DEFAULT_FADE_INTERVAL;
 
   // Initialise calibration values
@@ -124,11 +131,11 @@ void setup() {
   center = new Point();
   center.indicatorColor = 255;
   center.velocity = VELOCITY;
-  
+
   center2 = new Point();
   center2.indicatorColor = 100;
   center2.velocity = VELOCITY;
-  
+
   preview = new Point();
   preview.indicatorColor = 0;
   preview.velocity = PREVIEW_VELOCITY;
@@ -211,6 +218,9 @@ void update() {
       on_touch();
     fade_out();
 
+    if (debouncedTouching.update(touching()) && !debouncedTouching.get())
+      alternateCenter = !alternateCenter;
+
     int brightness = round(float(message.bri1) / 100.0 * points);
     size = int(map(points, 0, 100, 0, 255));
 
@@ -222,17 +232,15 @@ void update() {
     }
 
     if (message.update) {
-      parameterArray[1] = char(message.hue1);
-      parameterArray[3] = char(message.sat1);
-      parameterArray[5] = char(brightness);
+      color color2 = center2.getColor();
 
-      parameterArray[10] = parameterArray[1];
-      parameterArray[12] = parameterArray[3];
-      parameterArray[14] = parameterArray[5];
+      parameterArray[1] = parameterArray[10] = char(message.hue1);
+      parameterArray[3] = parameterArray[12] = char(message.sat1);
+      parameterArray[5] = parameterArray[14] = char(brightness);
 
-      parameterArray[2] = char(0);
-      parameterArray[4] = char(0);
-      parameterArray[6] = char(0);
+      parameterArray[2] = parameterArray[11] = char(round(hue(color2)));
+      parameterArray[4] = parameterArray[13] = char(round(saturation(color2)));
+      parameterArray[6] = parameterArray[15] = char(brightness);
 
       parameterArray[36] = char(int(map(size, 0, 255, 80, 255)));
 
@@ -247,7 +255,7 @@ void update() {
       paramsLastSent = millis();
     }
   }
-  
+
   if (message.isSent == false && millis() - lithneLastSent > LITHNE_MESSAGE_INTERVAL) {
     message.actuallySendToLithne();
     lithneLastSent = millis();
@@ -531,7 +539,7 @@ IntList activated_points() {
 
   if (points.size() > 0) {
     preview.moveTo(points);
-    ((Point)((alternateCenter = !alternateCenter) ? center : alternateCenter)).moveTo(points);
+    ((Point)(alternateCenter ? center : alternateCenter)).moveTo(points);
   }
   return cached_activated_points = points;
 }

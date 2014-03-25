@@ -4,7 +4,7 @@ FunctionTable ft = new FunctionTable();
 
 char parameterArray[] = {
   // Local Indirect
-  1, // 2 colors
+  2, // 2 colors
   0, // col 1: yellow
   0, // col 2: red
   255, // sat 1: full
@@ -15,7 +15,7 @@ char parameterArray[] = {
   0, // spd
 
   // Peripheral Indirect
-  1, // 2 colors
+  2, // 2 colors
   0, // col 1: blue
   0, // col 2: red
   0, // sat 1: full
@@ -60,7 +60,8 @@ public class FunctionTable implements MessageListener
     if (event.getMessage().functionIs("motion")) {
       motion = event.getMessage().getArgument(0);
       log("motion", motion);
-    } else if (event.getMessage().functionIs("loudness")) {
+    } 
+    else if (event.getMessage().functionIs("loudness")) {
       loudness = event.getMessage().getArgument(0);
       log("loudness", loudness);
     }
@@ -68,10 +69,13 @@ public class FunctionTable implements MessageListener
 }
 
 void initBreakout() {
-  lithne = new Lithne(this, "/dev/tty.usbmodem1a12413"/*"/dev/tty.usbmodem1413"*/, 115200);
+  if (USE_HUB)
+    lithne = new Lithne(this, "/dev/tty.usbmodem1a12413", 115200);
+  else
+    lithne = new Lithne(this, "/dev/tty.usbmodem1413", 115200);
   lithne.enableDebug();
   lithne.begin();
-  
+
   lithne.addMessageListener(ft);
 
   nm.addNode("00 13 a2 00 40 79 ce 37", "Color Coves");
@@ -140,7 +144,7 @@ void turnOff() {
   msg.addArgument(0);
   msg.addArgument(0);
   lithne.send( msg );
-  
+
   msg = new Message();
   msg.setFunction("setCCTParameters");
   msg.setScope("Breakout404");
