@@ -1,6 +1,6 @@
 class Debouncer<T> {
   long lastDebounceTime = 0;
-  long delay = 50;
+  long delay = 200;
   T lastState;
   T state;
 
@@ -22,4 +22,3 @@ class Debouncer<T> {
     return state;
   }
 }
-

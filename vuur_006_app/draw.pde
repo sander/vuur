@@ -57,6 +57,7 @@ void draw_activated() {
   }
   preview.draw(size);
   center.draw(size);
+  center2.draw(size);
   popMatrix();
 }
 

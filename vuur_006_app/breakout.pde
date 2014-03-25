@@ -11,7 +11,7 @@ char parameterArray[] = {
   0, // sat 2: full
   255, // bright 1: full
   0, // bright 2: full
-  10, // var
+  0, // var
   0, // spd
 
   // Peripheral Indirect
@@ -22,7 +22,7 @@ char parameterArray[] = {
   0, // sat 2: full
   0, // bright 1: full
   0, // bright 2: full
-  15, // var
+  0, // var
   0, // spd
 
   // Local Direct

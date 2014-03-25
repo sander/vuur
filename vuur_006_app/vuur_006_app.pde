@@ -242,7 +242,7 @@ void update() {
 
       parameterArray[36] = char(int(map(size, 0, 255, 80, 255)));
 
-      parameterArray[0] = parameterArray[9] = 1;
+      parameterArray[0] = parameterArray[9] = 2;
     }
   }
 
@@ -283,7 +283,7 @@ void updateActivated() {
   if (ap.size() > 0) {
     preview.moveTo(ap);
     center.velocity = center2.velocity = map(surface.numberOfActivatedPadsDuringInteraction(), 0, surface.pads.length, MIN_VELOCITY, MAX_VELOCITY);
-    ((Point)(alternateCenter ? center : alternateCenter)).moveTo(ap);
+    ((Point)(alternateCenter ? center : center2)).moveTo(ap);
   }
 
   if (ap.size() == 0 && previous_activated_points != null && previous_activated_points.size() > 0) {
