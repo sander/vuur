@@ -13,8 +13,6 @@ Serial lithneSerial;
 int max;
 float threshold;
 
-int lastCenterMove;
-
 boolean onTheSpotCalibration = false;
 boolean recalibrateMaximaOnTheSpot = false;
 
@@ -78,7 +76,9 @@ IntList cached_activated_points = null;
 IntList previous_activated_points = null;
 
 Point center;
+Point center2;
 Point preview;
+boolean alternateCenter;
 
 int[] values = new int[16];
 
@@ -124,6 +124,10 @@ void setup() {
   center = new Point();
   center.indicatorColor = 255;
   center.velocity = VELOCITY;
+  
+  center2 = new Point();
+  center2.indicatorColor = 100;
+  center2.velocity = VELOCITY;
   
   preview = new Point();
   preview.indicatorColor = 0;
@@ -527,7 +531,7 @@ IntList activated_points() {
 
   if (points.size() > 0) {
     preview.moveTo(points);
-    center.moveTo(points);
+    ((Point)((alternateCenter = !alternateCenter) ? center : alternateCenter)).moveTo(points);
   }
   return cached_activated_points = points;
 }
