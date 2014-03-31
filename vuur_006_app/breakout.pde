@@ -121,6 +121,7 @@ void setUserLocation( int x, int y )
   lithne.send( msg );
 }
 
+/*
 void setCeiling(boolean on) {
   Message msg = new Message();
   msg.setFunction("setCCTParameters");
@@ -134,6 +135,37 @@ void setCeiling(boolean on) {
   }
   lithne.send(msg);
 }
+*/
+
+long lastSent = 0;
+int prevCeilingIntensity = 0;
+int prevCeilingCCT = 0;
+int ceilingInterval = 500;
+void setCeiling() { setCeiling(true); }
+void setCeiling(boolean on) {
+  if (!on) lastSent = 0;
+  if (millis() - lastSent > ceilingInterval) {
+    int intensity = 100;//int(map(points, 0, 100, 0, 255));
+    int cct = constrain(int(map(points, 0, 50, 255, 0)), 0, 255); 
+    Message msg = new Message();
+    msg.setFunction("setCCTParameters");
+    msg.setScope("Breakout404");
+    msg.toXBeeAddress64( nm.getXBeeAddress64("CCT Ceiling Tiles") );
+    for (int i = 0; i < 5; i++) {
+      msg.addArgument(i);
+      msg.addArgument(1);
+      msg.addArgument(on ? intensity : 0);
+      msg.addArgument(cct);
+    }
+    prevCeilingIntensity = intensity;
+    prevCeilingCCT = cct;
+    lithne.send(msg);
+    lastSent = millis();
+    if (!on) lastSent += 5000;
+  }
+}
+
+
 
 void turnOff() {
   Message msg  =  new Message();
@@ -145,6 +177,7 @@ void turnOff() {
   msg.addArgument(0);
   lithne.send( msg );
 
+/*
   msg = new Message();
   msg.setFunction("setCCTParameters");
   msg.setScope("Breakout404");
@@ -155,6 +188,8 @@ void turnOff() {
     msg.addArgument(0);
     msg.addArgument(0);
   }
+  */
+  setCeiling(false);
   lithne.send(msg);
 }
 

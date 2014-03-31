@@ -36,7 +36,7 @@ int state;
 // Send signals to Breakout 404?
 boolean on = true;
 
-int size = 100;
+int size = 255;
 
 // Message, the values of which are sent to Lithne on send_to_lithne
 VuurMessage message = new VuurMessage();
@@ -78,6 +78,7 @@ IntList previous_activated_points = null;
 Point center;
 Point center2;
 Point preview;
+Point sizer;
 boolean alternateCenter;
 Debouncer<Boolean> debouncedTouching = new Debouncer<Boolean>();
 
@@ -137,6 +138,11 @@ void setup() {
   preview = new Point();
   preview.indicatorColor = 0;
   preview.velocity = PREVIEW_VELOCITY;
+  
+  sizer = new Point();
+  sizer.x = sizer.px = 0.0;
+  sizer.y = sizer.py = 0.0;
+  sizer.velocity = SIZER_VELOCITY;
 
   initLog();
 }
@@ -208,7 +214,7 @@ void update() {
     setUserLocation(240, 100);
     sendParamArray();
     hasRun = true;
-    setCeiling(false);
+    setCeiling();
   }
 
   if (state == State.RUNNING) {
@@ -222,14 +228,22 @@ void update() {
     }
 
     int brightness = round(float(message.bri1) / 100.0 * points);
-    size = int(map(points, 0, 100, 0, 255));
+    
+    int nActivated = surface.activated().size();
+    if (nActivated > 0) {
+      sizer.moveTo(float(nActivated) / float(nPads), 0.0);
+      //size = int(max(0, min(255, map(sizer.x, 0.0, 0.3, 180, 255))));
+    }
 
+/*
     if (points < CEILING_THRESHOLD && previousPoints >= CEILING_THRESHOLD) {
       setCeiling(false);
     } 
     else if (points >= CEILING_THRESHOLD && previousPoints < CEILING_THRESHOLD) {
       setCeiling(true);
     }
+    */
+    setCeiling();
 
     if (message.update) {
       color color1 = center.getColor();
@@ -256,7 +270,8 @@ void update() {
       parameterArray[15] = char(round(brightness(color2)));
       
       // size
-      parameterArray[36] = char(int(map(size, 0, 255, 80, 255)));
+      parameterArray[36] = char(size);//char(int(map(size, 0, 255, 80, 255)));
+      //parameterArray[36] = 200;
 
       // amount of colors
       parameterArray[0] = parameterArray[9] = 2;
@@ -299,7 +314,7 @@ void updateActivated() {
 
   if (ap.size() > 0) {
     preview.moveTo(ap);
-    center.velocity = center2.velocity = map(surface.numberOfActivatedPadsDuringInteraction(), 0, surface.pads.length, MIN_VELOCITY, MAX_VELOCITY);
+    center.velocity = center2.velocity = MAX_VELOCITY;//map(surface.numberOfActivatedPadsDuringInteraction(), 0, surface.pads.length, MIN_VELOCITY, MAX_VELOCITY);
     ((Point)(alternateCenter ? center : center2)).moveTo(ap);
   }
 

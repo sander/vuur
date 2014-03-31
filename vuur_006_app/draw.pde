@@ -85,6 +85,8 @@ String status() {
   s.append(surface.numberOfActivatedPadsDuringInteraction());
   s.append("\nvelocity: ");
   s.append(center.velocity);
+  s.append("\nsize: ");
+  s.append(size);
   return s.toString();
 }
 

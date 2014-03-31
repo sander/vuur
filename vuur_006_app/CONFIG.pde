@@ -48,6 +48,8 @@ final float MAX_VELOCITY = 0.050;
 
 final float PREVIEW_VELOCITY = 0.08;
 
+final float SIZER_VELOCITY = 0.001;
+
 final int LITHNE_MESSAGE_INTERVAL = 20;
 
 final boolean USE_HUB = true;

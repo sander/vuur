@@ -33,6 +33,21 @@ class Point {
     py = y;
     updated = true;
   }
+  
+  void moveTo(float nx, float ny) {
+    println("moving to: " + nx);
+    if (lastMove != 0 && !(px == nx && py == ny)) {
+      float g = sqrt(sq(nx - px) + sq(ny - py));
+      if (g > 0) g = 1.0 / g;
+      g = g * velocity; 
+      x = px + g * (nx - px);
+      y = py + g * (ny - py);
+    }
+    lastMove = millis();
+    px = x;
+    py = y;
+    updated = true;
+  }
 
   float[] toFloatArray() {
     float[] result = {
