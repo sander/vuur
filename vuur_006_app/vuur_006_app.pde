@@ -235,18 +235,30 @@ void update() {
       color color1 = center.getColor();
       color color2 = center2.getColor();
 
-      parameterArray[1] = parameterArray[10] = char(round(hue(color1)));
-      parameterArray[3] = parameterArray[12] = char(round(saturation(color1)));
-      parameterArray[5] = char(brightness);
-      parameterArray[14] = char(byte((float)brightness * 0.8));// / 2);
+      // local indirect color 1
+      parameterArray[1] = char(round(hue(color1)));
+      parameterArray[3] = char(round(saturation(color1) / 100.0 * points));
+      parameterArray[5] = char(round(brightness(color1)));
+      
+      // peripheral indirect color 1
+      parameterArray[10] = char(round(hue(color1)));
+      parameterArray[12] = char(round(saturation(color1) / 100.0 * points));
+      parameterArray[14] = char(round(brightness(color1)));
 
-      parameterArray[2] = parameterArray[11] = char(round(hue(color2)));
-      parameterArray[4] = parameterArray[13] = char(round(saturation(color2)));
-      parameterArray[6] = char(brightness);
-      parameterArray[15] = char(byte((float)brightness * 0.8));// / 2);
-
+      // local indirect color 2
+      parameterArray[2] = char(round(hue(color2)));
+      parameterArray[4] = char(round(saturation(color2) / 100.0 * points));
+      parameterArray[6] = char(round(brightness(color2)));
+      
+      // peripheral indirect color 2
+      parameterArray[11] = char(round(hue(color2)));
+      parameterArray[13] = char(round(saturation(color2) / 100.0 * points));
+      parameterArray[15] = char(round(brightness(color2)));
+      
+      // size
       parameterArray[36] = char(int(map(size, 0, 255, 80, 255)));
 
+      // amount of colors
       parameterArray[0] = parameterArray[9] = 2;
     }
   }
