@@ -146,7 +146,8 @@ void setCeiling(boolean on) {
   if (!on) lastSent = 0;
   if (millis() - lastSent > ceilingInterval) {
     int intensity = 100;//int(map(points, 0, 100, 0, 255));
-    int cct = constrain(int(map(points, 0, 50, 255, 0)), 0, 255); 
+    //int cct = constrain(int(map(points, 0, 50, 255, 0)), 0, 255);
+    int cct = 50; 
     Message msg = new Message();
     msg.setFunction("setCCTParameters");
     msg.setScope("Breakout404");

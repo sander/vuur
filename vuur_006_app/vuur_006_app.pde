@@ -42,7 +42,7 @@ int size = 255;
 VuurMessage message = new VuurMessage();
 
 // Points between 0 (no effect) and 100 (full effect)
-byte points = 0;
+byte points = 100;
 
 // Draw on screen? Very inefficient, disable for long-term usage
 boolean drawing = true;
@@ -227,7 +227,8 @@ void update() {
       setFeedbackColor();
     }
 
-    int brightness = round(float(message.bri1) / 100.0 * points);
+    //int brightness = round(float(message.bri1) / 100.0 * points);
+    int brightness = message.bri1;
     
     int nActivated = surface.activated().size();
     if (nActivated > 0) {
@@ -251,22 +252,22 @@ void update() {
 
       // local indirect color 1
       parameterArray[1] = char(round(hue(color1)));
-      parameterArray[3] = char(round(saturation(color1) / 100.0 * points));
+      parameterArray[3] = char(round(saturation(color1)));// / 100.0 * points));
       parameterArray[5] = char(round(brightness(color1)));
       
       // peripheral indirect color 1
       parameterArray[10] = char(round(hue(color1)));
-      parameterArray[12] = char(round(saturation(color1) / 100.0 * points));
+      parameterArray[12] = char(round(saturation(color1)));// / 100.0 * points));
       parameterArray[14] = char(round(brightness(color1)));
 
       // local indirect color 2
       parameterArray[2] = char(round(hue(color2)));
-      parameterArray[4] = char(round(saturation(color2) / 100.0 * points));
+      parameterArray[4] = char(round(saturation(color2)));// / 100.0 * points));
       parameterArray[6] = char(round(brightness(color2)));
       
       // peripheral indirect color 2
       parameterArray[11] = char(round(hue(color2)));
-      parameterArray[13] = char(round(saturation(color2) / 100.0 * points));
+      parameterArray[13] = char(round(saturation(color2)));//  / 100.0 * points));
       parameterArray[15] = char(round(brightness(color2)));
       
       // size
@@ -387,10 +388,13 @@ void on_activated_end() {
   message.phue = 0;
   message.psat = 0;
   message.pbri = 0;
+  /*
   if (points > 20)
     message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
   else
     message.breathe = 0;
+    */
+  message.breathe = TODO
   message.sendToLithne();
   
   preview.setTo(nextCenter());
