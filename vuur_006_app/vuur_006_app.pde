@@ -138,7 +138,7 @@ void setup() {
   preview = new Point();
   preview.indicatorColor = 0;
   preview.velocity = PREVIEW_VELOCITY;
-  
+
   sizer = new Point();
   sizer.x = sizer.px = 0.0;
   sizer.y = sizer.py = 0.0;
@@ -229,21 +229,21 @@ void update() {
 
     //int brightness = round(float(message.bri1) / 100.0 * points);
     int brightness = message.bri1;
-    
+
     int nActivated = surface.activated().size();
     if (nActivated > 0) {
       sizer.moveTo(float(nActivated) / float(nPads), 0.0);
       //size = int(max(0, min(255, map(sizer.x, 0.0, 0.3, 180, 255))));
     }
 
-/*
+    /*
     if (points < CEILING_THRESHOLD && previousPoints >= CEILING_THRESHOLD) {
-      setCeiling(false);
-    } 
-    else if (points >= CEILING_THRESHOLD && previousPoints < CEILING_THRESHOLD) {
-      setCeiling(true);
-    }
-    */
+     setCeiling(false);
+     } 
+     else if (points >= CEILING_THRESHOLD && previousPoints < CEILING_THRESHOLD) {
+     setCeiling(true);
+     }
+     */
     setCeiling();
 
     if (message.update) {
@@ -254,7 +254,7 @@ void update() {
       parameterArray[1] = char(round(hue(color1)));
       parameterArray[3] = char(round(saturation(color1)));// / 100.0 * points));
       parameterArray[5] = char(round(brightness(color1)));
-      
+
       // peripheral indirect color 1
       parameterArray[10] = char(round(hue(color1)));
       parameterArray[12] = char(round(saturation(color1)));// / 100.0 * points));
@@ -264,12 +264,12 @@ void update() {
       parameterArray[2] = char(round(hue(color2)));
       parameterArray[4] = char(round(saturation(color2)));// / 100.0 * points));
       parameterArray[6] = char(round(brightness(color2)));
-      
+
       // peripheral indirect color 2
       parameterArray[11] = char(round(hue(color2)));
       parameterArray[13] = char(round(saturation(color2)));//  / 100.0 * points));
       parameterArray[15] = char(round(brightness(color2)));
-      
+
       // size
       parameterArray[36] = char(size);//char(int(map(size, 0, 255, 80, 255)));
       //parameterArray[36] = 200;
@@ -390,13 +390,15 @@ void on_activated_end() {
   message.pbri = 0;
   /*
   if (points > 20)
-    message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
-  else
-    message.breathe = 0;
-    */
-  message.breathe = TODO
+   message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
+   else
+   message.breathe = 0;
+   */
+  //message.breathe = TODO
+  setBreathe();
   message.sendToLithne();
   
+
   preview.setTo(nextCenter());
 
   // TODO Is this ok?
@@ -443,17 +445,34 @@ void fade_out() {
   }
 }
 
+void setBreathe() {
+  if (points > 80)
+    message.breathe = 1;
+  else if (points > 20)
+    message.breathe = 100 - points;
+  else
+    message.breathe = 80;
+}
+
 void add_points(int pts) {
   points += pts;
   points_changed = millis();
   if (message.pbri == 0) {
+    setBreathe();
+
+    /*
     if (points > CEILING_THRESHOLD)
-      message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
-    else
-      message.breathe = 0;
-  }
-  if (points == 0)
+     message.breathe = (points == 0) ? 0 : ((points == 100) ? 1 : 100 - points);
+     else
+     message.breathe = 0;
+     */
+  } 
+  else if (points == 0)
     message.breathe = 0;
+  /*
+  if (points == 0)
+   message.breathe = 0;
+   */
   message.sendToLithne();
   message.update = true;
 }
@@ -570,3 +589,4 @@ Point currentCenter() {
 Point nextCenter() {
   return (!alternateCenter ? center : center2);
 }
+

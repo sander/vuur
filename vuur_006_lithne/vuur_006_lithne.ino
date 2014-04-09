@@ -17,9 +17,9 @@ enum MessageKey {
 };
 int msg[MESSAGE_LENGTH];
 
-const unsigned long SWITCH_TIME = 50;
+const unsigned long SWITCH_TIME = 100;
 const unsigned long PREVIEW_CHANGE_TIME = 300;
-const unsigned long BREATHE_TIME = 2000;
+const unsigned long BREATHE_TIME = 4000;
 boolean warningOn = true;
 
 enum Mode {
@@ -54,11 +54,11 @@ void loop() {
     switch (mode) {
     case BREATHING:
       time = (changeTime) ? changeTime : duration;
-      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(100 * 2.55 * ((warningOn = !warningOn) ? 0.4 : 0.2)), time, true);
+      lamp->hsbTo(msg[HUE1], msg[SAT1], (int)(255.0 * ((warningOn = !warningOn) ? 0.1 : 0.05)), time, true);
       break;
     case PREVIEWING:
       time = (changeTime) ? changeTime : PREVIEW_CHANGE_TIME;
-      lamp->hsbTo(msg[PHUE], msg[PSAT], (int)(0.5 * (float)msg[PBRI]), time, true);
+      lamp->hsbTo(msg[PHUE], msg[PSAT], (int)(0.4 * (float)msg[PBRI]), time, true);
       break;
     case IDLE:
       time = (changeTime) ? changeTime : PREVIEW_CHANGE_TIME;
