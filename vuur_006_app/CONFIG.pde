@@ -1,5 +1,8 @@
 // Configuration
 
+// Run without sensors and Breakout?
+final boolean DRY_RUN = true;
+
 // Screen size and layout (x, y, width, height)
 final int WIDTH = 800;//1440;
 final int HEIGHT = 600;//900;

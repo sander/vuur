@@ -95,13 +95,15 @@ void setup() {
 
   initBreakout();
 
-  if (USE_HUB) {
-    arduino = new Serial(this, "/dev/tty.usbmodem1a12421", 115200);
-    lithneSerial = new Serial(this, "/dev/tty.usbmodem1a12411", 115200);
-  } 
-  else {
-    arduino = new Serial(this, "/dev/tty.usbmodem1421", 115200);
-    lithneSerial = new Serial(this, "/dev/tty.usbmodem1411", 115200);
+  if (!DRY_RUN) {
+    if (USE_HUB) {
+      arduino = new Serial(this, "/dev/tty.usbmodem1a12421", 115200);
+      lithneSerial = new Serial(this, "/dev/tty.usbmodem1a12411", 115200);
+    } 
+    else {
+      arduino = new Serial(this, "/dev/tty.usbmodem1421", 115200);
+      lithneSerial = new Serial(this, "/dev/tty.usbmodem1411", 115200);
+    }
   }
 
   fadeInterval = DEFAULT_FADE_INTERVAL;
@@ -150,7 +152,7 @@ void setup() {
 void draw() {
   update();
 
-  if (millis() - lastRegistered > REGISTER_INTERVAL) {
+  if (!DRY_RUN && millis() - lastRegistered > REGISTER_INTERVAL) {
     Message msg = new Message();
     msg.setFunction("registerSensorListener");
     msg.setScope("Breakout404");
@@ -160,7 +162,7 @@ void draw() {
     log("register", "");
   }
 
-  if (read_values()) {
+  if (!DRY_RUN && read_values()) {
     switch (state) {
     case State.CALIBRATE_NOT_TOUCHED:
       set_minima();
@@ -397,7 +399,7 @@ void on_activated_end() {
   //message.breathe = TODO
   setBreathe();
   message.sendToLithne();
-  
+
 
   preview.setTo(nextCenter());
 

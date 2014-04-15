@@ -6,7 +6,7 @@ class VuurMessage {
   int psat = 0;
   int pbri = 0;
   int breathe = 0;     // Preview breathe duration between 0 (0 s) and 100 (2 s)
-  
+
   boolean isSent = false;
 
   boolean update = true;
@@ -36,12 +36,15 @@ class VuurMessage {
   void sendToLithne() {
     isSent = false;
   }
-  
+
   void actuallySendToLithne() {
     String message = toString();
-    lithneSerial.write(message);
+    if (!DRY_RUN) {
+      lithneSerial.write(message);
+    }
     sent += 1;
     //log("message", message);
     isSent = true;
   }
 }
+
