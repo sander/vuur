@@ -79,6 +79,11 @@ Point center;
 Point center2;
 Point preview;
 Point sizer;
+Point inspiration;
+boolean inspiring;
+long inspiringStart = millis();
+int inspirationTarget;
+int inspired;
 boolean alternateCenter;
 Debouncer<Boolean> debouncedTouching = new Debouncer<Boolean>();
 
@@ -146,6 +151,14 @@ void setup() {
   sizer.y = sizer.py = 0.0;
   sizer.velocity = SIZER_VELOCITY;
 
+  inspiration = new Point();
+  inspiration.indicatorColor = 50;
+  inspiration.velocity = INSPIRATION_VELOCITY;
+  inspirationTarget = 0;
+  inspiration.x = inspiration.px = 3.0;
+  inspiration.y = inspiration.py = 3.0;
+  inspiration.lastMove = millis();
+
   initLog();
 }
 
@@ -204,6 +217,8 @@ void update() {
   updateSensed();
   updateTouched();
   updateActivated();
+
+  updateInspiration();
 
   if (reset) {
     add_points(-points);
@@ -319,6 +334,9 @@ void updateActivated() {
     preview.moveTo(ap);
     center.velocity = center2.velocity = MAX_VELOCITY;//map(surface.numberOfActivatedPadsDuringInteraction(), 0, surface.pads.length, MIN_VELOCITY, MAX_VELOCITY);
     ((Point)(alternateCenter ? center : center2)).moveTo(ap);
+
+    inspiring = false;
+    inspiringStart = millis();
   }
 
   if (ap.size() == 0 && previous_activated_points != null && previous_activated_points.size() > 0) {
@@ -330,6 +348,52 @@ void updateActivated() {
   }
 
   previous_activated_points = ap;
+}
+
+void updateInspiration() {
+  if (millis() - inspiringStart > INSPIRATION_WAIT) {
+    inspirationTarget = 0;
+    inspiring = true;
+    log("inspiration", inspirationTarget);
+    //println("starting");
+    inspired = 0;
+  }
+  //println(inspiring);
+  if (inspiring) {
+    if (inspired > INSPIRATION_LIMIT) {
+      inspiring = false;
+      inspiringStart = millis();
+      return;
+    }
+    IntList target = new IntList();
+    target.append(inspirationTarget);
+    inspiration.moveTo(target);
+    //println(inspiration.distance(inspirationTarget));
+    if (inspiration.distance(inspirationTarget) < INSPIRATION_THRESHOLD) {
+      switch (inspirationTarget) {
+      case 0: 
+        inspirationTarget = 3; 
+        break;
+      case 3: 
+        inspirationTarget = 15; 
+        break;
+      case 15: 
+        inspirationTarget = 12; 
+        break;
+      case 12: 
+        inspirationTarget = 0; 
+        break;
+      }
+      log("inspiration", inspirationTarget);
+      inspired++;
+    }
+    inspiringStart = millis();
+    color c = inspiration.getColor();
+    message.hue1 = int(hue(c));
+    message.sat1 = int(saturation(c));
+    message.bri1 = int(brightness(c));
+    if (inspiration.updated) message.sendToLithne();
+  }
 }
 
 void updateTouched() {
@@ -442,8 +506,8 @@ void on_touch() {
 
 void fade_out() {
   if (millis() - points_changed > fadeInterval && points > 0) {
-    add_points(-1);
-    message.sendToLithne();
+    //add_points(-1);
+    //message.sendToLithne();
   }
 }
 

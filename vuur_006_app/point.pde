@@ -79,5 +79,10 @@ class Point {
     };
     return result;
   }
+  
+  float distance(int i) {
+    float[] pos = position(i);
+    return sqrt(sq(pos[0] - x) + sq(pos[1] - y));
+  }
 }
 
