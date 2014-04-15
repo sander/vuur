@@ -1,7 +1,7 @@
 // Configuration
 
 // Run without sensors and Breakout?
-final boolean DRY_RUN = true;
+final boolean DRY_RUN = false;
 
 // Screen size and layout (x, y, width, height)
 final int WIDTH = 800;//1440;
@@ -51,10 +51,10 @@ final float MAX_VELOCITY = 0.01;//0.050;
 
 final float PREVIEW_VELOCITY = 0.08;
 final float SIZER_VELOCITY = 0.001;
-final float INSPIRATION_VELOCITY = 0.005;
+final float INSPIRATION_VELOCITY = 0.004;
 final float INSPIRATION_THRESHOLD = 0.1;
-final long INSPIRATION_WAIT = 1000; //5 * 60 * 1000;
-final int INSPIRATION_LIMIT = 8;
+final long INSPIRATION_WAIT = 3 * 60 * 1000;
+final int INSPIRATION_LIMIT = 9;
 
 final int LITHNE_MESSAGE_INTERVAL = 20;
 

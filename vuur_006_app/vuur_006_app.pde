@@ -355,43 +355,74 @@ void updateInspiration() {
     inspirationTarget = 0;
     inspiring = true;
     log("inspiration", inspirationTarget);
-    //println("starting");
+    println("starting");
+    //inspiration.lastMove = 0;
+    inspiration.setTo(alternateCenter ? center : center2);
     inspired = 0;
   }
   //println(inspiring);
   if (inspiring) {
-    if (inspired > INSPIRATION_LIMIT) {
+    //IntList target = new IntList();
+    Point target;
+    if (inspired == INSPIRATION_LIMIT) {
+      //target.append(alternateCenter ? center : center2);
+      //println("too much inspiration");
+      target = alternateCenter ? center : center2;
+      //log("inspiring", -1);
+      //inspiring = false;
+      //inspiringStart = millis();
+
+      /*
+      color c = inspiration.getColor();
+       message.hue1 = int(hue(c));
+       message.sat1 = int(saturation(c));
+       message.bri1 = int(brightness(c));
+       */
+      //return;
+    } else if (inspired > INSPIRATION_LIMIT) {
       inspiring = false;
       inspiringStart = millis();
+      log("inspiring", -2);
       return;
     }
-    IntList target = new IntList();
-    target.append(inspirationTarget);
+    else {
+      //target.append(inspirationTarget);
+      target = new Point(inspirationTarget);
+    }
+
     inspiration.moveTo(target);
     //println(inspiration.distance(inspirationTarget));
-    if (inspiration.distance(inspirationTarget) < INSPIRATION_THRESHOLD) {
-      switch (inspirationTarget) {
-      case 0: 
-        inspirationTarget = 3; 
-        break;
-      case 3: 
-        inspirationTarget = 15; 
-        break;
-      case 15: 
-        inspirationTarget = 12; 
-        break;
-      case 12: 
-        inspirationTarget = 0; 
-        break;
+    if (inspiration.distance(target) < INSPIRATION_THRESHOLD) {
+      if (inspired == INSPIRATION_LIMIT) {
+        //inspiring = false;
+        //inspiringStart = millis();
+        //log("inspiration", -1);
+        inspired++;
+      } 
+      else {
+        switch (inspirationTarget) {
+        case 0: 
+          inspirationTarget = 3; 
+          break;
+        case 3: 
+          inspirationTarget = 15; 
+          break;
+        case 15: 
+          inspirationTarget = 12; 
+          break;
+        case 12: 
+          inspirationTarget = 0; 
+          break;
+        }
+        log("inspiration", inspirationTarget);
+        inspired++;
       }
-      log("inspiration", inspirationTarget);
-      inspired++;
     }
     inspiringStart = millis();
     color c = inspiration.getColor();
     message.hue1 = int(hue(c));
-    message.sat1 = int(saturation(c));
-    message.bri1 = int(brightness(c));
+    message.sat1 = int(saturation(c) * 0.85);
+    message.bri1 = int(brightness(c) * 0.5);
     if (inspiration.updated) message.sendToLithne();
   }
 }
@@ -512,12 +543,15 @@ void fade_out() {
 }
 
 void setBreathe() {
+  message.breathe = 1;
+  /*
   if (points > 80)
-    message.breathe = 1;
-  else if (points > 20)
-    message.breathe = 100 - points;
-  else
-    message.breathe = 80;
+   message.breathe = 1;
+   else if (points > 20)
+   message.breathe = 100 - points;
+   else
+   message.breathe = 80;
+   */
 }
 
 void add_points(int pts) {

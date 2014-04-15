@@ -8,6 +8,15 @@ class Point {
   int lastMove;
   boolean updated;
   
+  Point() {
+  }
+  
+  Point(int i) {
+    float[] pos = position(i);
+    px = x = pos[0];
+    py = y = pos[1];
+  }
+  
   void setTo(Point point) {
     px = x = point.x;
     py = y = point.y;
@@ -35,7 +44,7 @@ class Point {
   }
   
   void moveTo(float nx, float ny) {
-    println("moving to: " + nx);
+    //println("moving to: " + nx);
     if (lastMove != 0 && !(px == nx && py == ny)) {
       float g = sqrt(sq(nx - px) + sq(ny - py));
       if (g > 0) g = 1.0 / g;
@@ -47,6 +56,10 @@ class Point {
     px = x;
     py = y;
     updated = true;
+  }
+  
+  void moveTo(Point p) {
+    moveTo(p.px, p.py);
   }
 
   float[] toFloatArray() {
@@ -83,6 +96,10 @@ class Point {
   float distance(int i) {
     float[] pos = position(i);
     return sqrt(sq(pos[0] - x) + sq(pos[1] - y));
+  }
+  
+  float distance(Point p) {
+    return sqrt(sq(p.x - x) + sq(p.y - y));
   }
 }
 
